@@ -34,11 +34,11 @@ curl --location --request POST 'http://127.0.0.1:9000/find' \
   "name": "Panificadora Santa Tereza",
   "rating": "4,4(5.222)",
   "infos": [
-    "Praça Dr. João Mendes, 150 - Centro Histórico de São Paulo, São Paulo - SP, 01501-000",
-    "Fazer um pedido",
-    "(11) 3111-1030",
-    "C9X8+22 Centro Histórico de São Paulo, São Paulo - SP",
-    "Enviar para smartphone"
-  ]
+        "Praça Dr. João Mendes, 150 - Centro Histórico de São Paulo, São Paulo - SP, 01501-000",
+        "Fazer um pedido",
+        "(11) 3111-1030",
+        "C9X8+22 Centro Histórico de São Paulo, São Paulo - SP",
+        "Enviar para smartphone"
+    ]
 }
 ```
