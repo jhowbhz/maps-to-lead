@@ -5,7 +5,7 @@ var queue = require('express-queue');
 
 const bodyParser = require('body-parser');
 
-const getBrowser = () => puppeteer.launch({ 
+const getBrowser = () => puppeteer.launch({
     autoSelectChrome: true,
     chromeFlags: [
       '--disable-gpu',
@@ -13,33 +13,28 @@ const getBrowser = () => puppeteer.launch({
     ],
     logLevel: 'verbose',
     args: [
-        '--headless',
+       // '--headless',
         '--disable-gpu',
         '--no-sandbox',
-        //'--crash-test', // Causes the browser process to crash on startup, useful to see if we catch that correctly
-        // not idea if those 2 aa options are usefull with disable gl thingy
-        '--disable-canvas-aa', // Disable antialiasing on 2d canvas
-        '--disable-2d-canvas-clip-aa', // Disable antialiasing on 2d canvas clips
-        '--disable-gl-drawing-for-tests', // BEST OPTION EVER! Disables GL drawing operations which produce pixel output. With this the GL output will not be correct but tests will run faster.
-        '--disable-dev-shm-usage', // ???
-        '--no-zygote', // wtf does that mean ?
-        '--use-gl=swiftshader', // better cpu usage with --use-gl=desktop rather than --use-gl=swiftshader, still needs more testing.
+        '--disable-canvas-aa',
+        '--disable-2d-canvas-clip-aa',
+        '--disable-gl-drawing-for-tests',
+        '--disable-dev-shm-usage',
+        '--no-zygote',
+        '--use-gl=swiftshader',
         '--enable-webgl',
         '--hide-scrollbars',
         '--mute-audio',
         '--no-first-run',
         '--disable-infobars',
         '--disable-breakpad',
-        //'--ignore-gpu-blacklist',
-        '--window-size=800,600', // see defaultViewport
-        '--user-data-dir=./chromeData', // created in index.js, guess cache folder ends up inside too.
-        //'--no-sandbox', // meh but better resource comsuption
+        '--window-size=300,300',
+        '--user-data-dir=./chromeData',
         '--disable-setuid-sandbox',
         '--disable-features=site-per-process',
     ],
-    headless: true, // process.env['DISPLAY'] = ':0'; in index.js, xorg running.
-    ignoreDefaultArgs: true, // needed ?
-    devtools: false, // not needed so far, we can see websocket frames and xhr responses without that.
+    ignoreDefaultArgs: true,
+    devtools: false,
 });
 
 const SELECTORS = {
@@ -89,60 +84,52 @@ const getData = async (page, currentPageNum) => {
 }
 
 const scroling = async (page, scrollContainer, time, limit) => {
-    
+
     let lastHeight = await page.evaluate(`document.querySelector("${scrollContainer}").scrollHeight`);
     console.log(lastHeight)
 
     while (true) {
         await page.evaluate(`document.querySelector("${scrollContainer}").scrollTo(0, document.querySelector("${scrollContainer}").scrollHeight)`);
-        //await page.waitForTimeout(time);
+        await page.waitForTimeout(time);
         let newHeight = limit ?? await page.evaluate(`document.querySelector("${scrollContainer}").scrollHeight`);
         if (newHeight === lastHeight) {
             break;
         }
+        
         console.log(newHeight)
         lastHeight = newHeight;
     }
 }
 
-// (async () => {
 async function start(query, webhook, time){
-
-  let browser = null;
-
-  try {
 
     browser = await getBrowser();
     const page = await browser.newPage();
-    
+
     page.setDefaultNavigationTimeout(0)
 
-    // Visit maps.google.com
-    await page.goto('https://maps.google.com')
+    Promise.all([
+        await page.goto('https://maps.google.com'),
+        await page.waitForSelector('#searchboxinput'),
+        await page.click('#searchboxinput'),
+        await page.type('#searchboxinput', query),
+        await page.keyboard.press('Enter'),
+        await page.waitForSelector(SELECTORS.LISTING),
+        await scroling(page, SELECTORS.SCROLL, 1000, time),
+        await parseData(browser, webhook, await getData(page, 2))
 
-    // Wait till the page loads and an input field with id searchboxinput is present
-    await page.waitForSelector('#searchboxinput')
-    // Simulate user click
-    await page.click('#searchboxinput')
+    ]).then(() => {
 
-    // Type our search query
-    await page.type('#searchboxinput', query);
-    // Simulate pressing Enter key
-    await page.keyboard.press('Enter');
+        console.log('done')
 
-    // Wait for the page to load results.
-    await page.waitForSelector(SELECTORS.LISTING);
+    }).finally(() => {
 
-    // Get our final structured data
-    await scroling(page, SELECTORS.SCROLL, 1000, time);
 
-    const finalData = await getData(page, 2);
-    
-    await parseData(browser, webhook, finalData);
+    }).catch((err) => {
+        
+        console.log(err)
 
-  } catch (error) {
-    console.log(error)
-  }
+    });
 
 }
 
@@ -155,16 +142,16 @@ async function parseData(browser, webhook, finalData){
             const page = await browser.newPage();
             await page.setDefaultNavigationTimeout(0);
             await page.goto(place.link);
-         
+
             let dados = {
                 "name": place.name,
                 "rating": place.rating,
-                "infos": []
+                "price": place.price,
+                "link": place.link,
+                "image": place.image,
+                "infos": [],
             }
-            // "price": place.price,
-            // "link": place.link,
-            // "image": place.image,
-    
+
             const infos = await page.$$('.Io6YTe');
             for (const info of infos)
 
@@ -174,21 +161,26 @@ async function parseData(browser, webhook, finalData){
                     headers: { 'Content-type' : 'application/json' },
                     url: webhook,
                     body: JSON.stringify(dados)
-                  }, function(error, response, body){
-                    
-                    console.log('Error webhook:', error === null ? "Not" : "Yes");
-                    
+                }, function(error, response, body){
+                    console.log('Send webhook:', error === null ? "Yes" : "No");
                 });
-            
-                await page.close();
 
+            await page.close();
         });
-        
+
+        const pages = await browser.pages();
+
+        if (pages.length > 1) {
+            await pages[0].close();
+            await pages[1].close();
+        }
+
         return dados;
-        
+
     } catch (error) {
         return error;
     }
+    
 }
 
 function middleware (callback) {
@@ -214,7 +206,7 @@ app.post('/find', middleware( async(req, res) => {
         "query": query,
         "webhook": webhook
     });
-    
+
 }));
 
 app.listen(9000, () =>
