@@ -88,4 +88,4 @@ server {
 }
 ```
 
-```ln -s /etc/nginx/sites-available/painel /etc/nginx/sites-enabled/mapslead```
+```ln -s /etc/nginx/sites-available/mapslead /etc/nginx/sites-enabled/mapslead```
