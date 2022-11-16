@@ -20,8 +20,6 @@ app.use(function(req, res, next) {
     next();
 });
 
-app.use(express.static('public'))
-
 async function start(query, webhook, time, hook){
 
     const browser = await GoogleMaps.getBrowser();
