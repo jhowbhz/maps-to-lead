@@ -60,7 +60,7 @@ app.post('/find', async(req, res) => {
 
         await start(query, webhook, times, hook);
 
-        return res.json({
+        return res.status(200).json({
             "error": false,
             "message": "Sucesso, você receberá os dados em seu webhook em até 5 minutos.",
             "query": query,
@@ -69,10 +69,10 @@ app.post('/find', async(req, res) => {
 
     }else{
         
-        return res.status({
+        return res.status(400).json({
             "error": true,
             "message": "Erro, verifique se você enviou todos os dados corretamente."
-        }, 400);
+        });
         
     }
 

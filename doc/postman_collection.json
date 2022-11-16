@@ -1,0 +1,48 @@
+{
+	"info": {
+		"_postman_id": "47207027-8c43-4493-94f9-31af499fcdb4",
+		"name": "API - MAPS TO LEADS",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "24382542"
+	},
+	"item": [
+		{
+			"name": "find",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"time\": 20,\r\n    \"hook\": \"additional parameter\",\r\n    \"query\": \"Barbearia Cabral, Contagem\",\r\n    \"webhook\": \"https://webhook.site/a257d90a-8df4-4890-9a4d-b1d95cf79646\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:9000/find",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "9000",
+					"path": [
+						"find"
+					]
+				},
+				"description": "Busca os dados enviados na query e envia para o webhook selecionado"
+			},
+			"response": []
+		}
+	]
+}
