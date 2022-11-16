@@ -59,7 +59,7 @@ module.exports = class GoogleMaps {
                 for (const info of infos){
 
                     dados.infos.push(await page.evaluate(info => info.textContent, info));
-                    let number = Parser.checkNumber("55", dados)
+                    let number = Parser.checkNumber(dados)
     
                     dados.formated = {
                         "name": dados?.name ?? '',
