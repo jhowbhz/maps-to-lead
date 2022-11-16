@@ -12,7 +12,7 @@ npm install
 ```
 
 ### Para rodar o projeto
-```/opt/maps-to-leads node server.js```
+```npm start```
 
 ### Para rodar em background
 ```npm install pm2 -g ```
