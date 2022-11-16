@@ -17,7 +17,7 @@ npm install
 ### Para rodar em background
 ```npm install pm2 -g ```
 
-```pm2 start server.js --name="API - MAPS TO LEADS"```
+```pm2 start index.js --name="API - MAPS TO LEADS"```
 
 ### Para utilizar a API
 ```c

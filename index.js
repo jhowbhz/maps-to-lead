@@ -20,6 +20,8 @@ app.use(function(req, res, next) {
     next();
 });
 
+app.use(express.static('public'))
+
 async function start(query, webhook, time, hook){
 
     const browser = await GoogleMaps.getBrowser();
@@ -57,6 +59,9 @@ app.get('/', (req, res) => {
 });
 
 app.post('/api/find', async(req, res) => {
+
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', 's-max-age=1, stale-while-revalidate');
 
     if( Validation.validate(req.body) ){
 
