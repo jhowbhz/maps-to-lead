@@ -1,5 +1,5 @@
 # 📍 Maps to Lead
-É um projeto open source com a iniciativa de gerar prospecção de leads de forma mais automatizada e geral, de maneira nenhuma apoiamos ou incentivamos a prática de SPAM, utilize com sabedoria.
+É um projeto open source com a iniciativa extrair contatos do Google maps por palavras chaves de forma automatizada, não apoiamos ou incentivamos a prática de SPAM, utilize com sabedoria.
 
 ### Demostração online
 https://api.mapslead.com
