@@ -77,7 +77,7 @@ curl --location --request POST 'http://127.0.0.1:9000/find' \
 
 ```text
 upstream mapslead {
-    server 127.0.0.1:3333;
+    server 127.0.0.1:9000;
     keepalive 8;
 }
 server {

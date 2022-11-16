@@ -1,4 +1,5 @@
 module.exports = class Validation {
+
     static validate(data){
         if(!data.query){
             return false;
@@ -14,4 +15,5 @@ module.exports = class Validation {
         }
         return true;
     }
+    
 }
