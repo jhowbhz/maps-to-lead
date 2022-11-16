@@ -1,14 +1,15 @@
 {
-  "name": "teste",
+  "name": "maps-to-leads",
   "version": "1.0.0",
-  "description": "",
+  "description": "É um projeto open source com a iniciativa de gerar prospecção de leads de forma mais automatizada e geral, de maneira nenhuma apoiamos ou incentivamos a prática de SPAM, utilize com sabedoria.",
   "main": "./index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node ./index.js"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Jonathan Henrique",
+  "homepage": "https://apigratis.com.br",
+  "license": "MIT",
   "dependencies": {
     "body-parser": "^1.20.1",
     "dotenv": "^16.0.3",
@@ -17,8 +18,6 @@
     "mysql": "^2.18.1",
     "puppeteer": "^19.2.2",
     "puppeteer-extra": "^3.3.4",
-    "puppeteer-extra-plugin-stealth": "^2.11.1",
-    "request": "^2.88.2",
-    "xlsx": "^0.18.5"
+    "request": "^2.88.2"
   }
 }
