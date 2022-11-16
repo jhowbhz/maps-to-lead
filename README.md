@@ -101,3 +101,7 @@ server {
 ### Adicionando SSL
 
 ``` certbot --nginx```
+
+
+### Como funciona?
+![alt text](screenshot.gif "Screnshot")
