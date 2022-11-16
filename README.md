@@ -62,3 +62,30 @@ curl --location --request POST 'http://127.0.0.1:9000/find' \
   ]
 }
 ```
+
+### Usando nginx
+
+```nano /etc/nginx/sites-available/mapslead```
+
+```text
+upstream mapslead {
+    server 127.0.0.1:3333;
+    keepalive 8;
+}
+server {
+
+    server_name SEU_DOMINIO;
+
+    location / {
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header Host $http_host;
+      proxy_set_header X-NginX-Proxy true;
+      proxy_pass http://mapslead/;
+      proxy_redirect off;
+    }
+    listen 80;
+}
+```
+
+```ln -s /etc/nginx/sites-available/painel /etc/nginx/sites-enabled/mapslead```
