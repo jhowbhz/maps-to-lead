@@ -2,9 +2,22 @@
 É um projeto open source com a iniciativa de gerar prospecção de leads de forma mais automatizada e geral, de maneira nenhuma apoiamos ou incentivamos a prática de SPAM, utilize com sabedoria.
 
 ### Para instalar
-```npm install```
+
+```bash
+apt update && cd /opt
+git clone https://github.com/jhowbhz/maps-to-lead.git maps-to-leads
+cd /opt/maps-to-leads
+cp .env_example .env
+npm install
+```
+
 ### Para rodar o projeto
-```node server.js```
+```/opt/maps-to-leads node server.js```
+
+### Para rodar em background
+```npm install pm2 -g ```
+
+```pm2 start server.js --name="API - MAPS TO LEADS"```
 
 ### Para utilizar a API
 ```c
