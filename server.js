@@ -49,7 +49,14 @@ async function start(query, webhook, time, hook){
 
 }
 
-app.post('/find', async(req, res) => {
+app.get('/', (req, res) => {
+    const path = `/api/find`;
+    res.setHeader('Content-Type', 'text/html');
+    res.setHeader('Cache-Control', 's-max-age=1, stale-while-revalidate');
+    res.end(`Nice! Go to item: <a href="${path}"> ${path} </a>`);
+});
+
+app.post('/api/find', async(req, res) => {
 
     if( Validation.validate(req.body) ){
 
