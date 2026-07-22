@@ -76,3 +76,38 @@ export function findSocialInHtml(html: string | null | undefined): { instagram: 
   };
   return { instagram: pick(IG_URL), facebook: pick(FB_URL) };
 }
+
+function toAbsolute(href: string, base: string): string {
+  try {
+    return new URL(href, base).toString();
+  } catch {
+    return '';
+  }
+}
+
+const CONTACT_HREF = /href=["']([^"']*(?:contato|contact|fale[-_]?conosco|contatos)[^"']*)["']/gi;
+
+/**
+ * URLs de páginas de contato para procurar email quando a home não tem.
+ * Prefere links reais achados no HTML; se não houver, tenta caminhos comuns.
+ */
+export function contactUrls(html: string | null | undefined, baseUrl: string): string[] {
+  const src = String(html || '');
+  const found = new Set<string>();
+  const re = new RegExp(CONTACT_HREF.source, 'gi');
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(src))) {
+    const href = m[1];
+    if (!href) continue;
+    const abs = toAbsolute(href, baseUrl);
+    if (abs) found.add(abs);
+  }
+  if (found.size > 0) return [...found];
+
+  try {
+    const origin = new URL(baseUrl).origin;
+    return ['/contato', '/contact', '/fale-conosco'].map((p) => origin + p);
+  } catch {
+    return [];
+  }
+}

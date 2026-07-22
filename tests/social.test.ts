@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { classifyLink, findEmail, findSocialInHtml, routeSiteLink } from '../src/parsing/social';
+import { classifyLink, contactUrls, findEmail, findSocialInHtml, routeSiteLink } from '../src/parsing/social';
 
 describe('classifyLink', () => {
   it('reconhece instagram, facebook e site comum', () => {
@@ -52,5 +52,20 @@ describe('findSocialInHtml', () => {
   it('ignora links de share/plugins do facebook', () => {
     const html = `<a href="https://facebook.com/sharer/sharer.php?u=x">share</a>`;
     expect(findSocialInHtml(html).facebook).toBe('');
+  });
+});
+
+describe('contactUrls', () => {
+  it('acha links de contato no HTML (resolvidos para absolutos)', () => {
+    const html = '<a href="/contato">Contato</a> <a href="https://x.com/fale-conosco">fale</a>';
+    const urls = contactUrls(html, 'https://x.com/');
+    expect(urls).toContain('https://x.com/contato');
+    expect(urls).toContain('https://x.com/fale-conosco');
+  });
+
+  it('cai em caminhos comuns quando não há link de contato', () => {
+    const urls = contactUrls('<p>sem contato aqui</p>', 'https://x.com/');
+    expect(urls).toContain('https://x.com/contato');
+    expect(urls).toContain('https://x.com/fale-conosco');
   });
 });

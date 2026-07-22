@@ -1,8 +1,9 @@
 import { logger } from '../config/logger';
 import type { Lead } from '../domain/types';
-import { findEmail, findSocialInHtml } from '../parsing/social';
+import { contactUrls, findEmail, findSocialInHtml } from '../parsing/social';
 
 const MAX_BYTES = 512 * 1024; // 512KB de HTML já é mais que suficiente
+const MAX_CONTACT_PAGES = 2; // quantas páginas de contato tentar atrás de email
 
 // Lê o corpo da resposta com teto de bytes (não baixa sites gigantes inteiros).
 async function readCapped(res: Response, max: number): Promise<string> {
@@ -57,8 +58,19 @@ export async function enrichLeadFromSite(lead: Lead, timeoutMs: number): Promise
     const html = await fetchHtml(site, timeoutMs);
     if (!html) return;
 
-    const email = findEmail(html);
+    let email = findEmail(html);
     const { instagram, facebook } = findSocialInHtml(html);
+
+    // Se a home não tem email, segue os links de contato (best-effort, limitado).
+    if (!email) {
+      for (const url of contactUrls(html, site).slice(0, MAX_CONTACT_PAGES)) {
+        const chtml = await fetchHtml(url, timeoutMs);
+        if (!chtml) continue;
+        email = findEmail(chtml);
+        if (email) break;
+      }
+    }
+
     const found: string[] = [];
 
     if (email) {

@@ -188,10 +188,11 @@ curl --location --request POST 'http://127.0.0.1:9000/api/find' \
 }
 ```
 
-- `ddd` é derivado do telefone. Se o **link do Maps** já for um Instagram/Facebook, ele é
-  roteado automaticamente para `social.instagram`/`facebook` (sem visitar site).
-- `extra` só é preenchido quando `options.onlyInfosExtras: true` — aí o site do lead é
-  visitado (num **pool paralelo**) e `campos_encontrados` lista o que achou (email/instagram/facebook).
+- `ddd` é derivado do telefone; números **não geográficos** (0800/0300…) ficam com `ddd: ""`.
+  Se o **link do Maps** já for um Instagram/Facebook, é roteado automaticamente para `social.*`.
+- `extra` só é preenchido com `options.onlyInfosExtras: true` — o site do lead é visitado num
+  **pool paralelo**; se a home não tiver email, ele segue as páginas de **contato**.
+  `campos_encontrados` lista o que achou (email/instagram/facebook).
 
 ## Painel de monitoramento — `/manager`
 

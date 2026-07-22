@@ -50,6 +50,11 @@ describe('dddFromPhone', () => {
     expect(dddFromPhone('+553133334444')).toBe('31');
   });
 
+  it('descarta 0800/0300 e afins (DDD não geográfico)', () => {
+    expect(dddFromPhone('+558007025700')).toBe(''); // 0800 -> "80" não é DDD válido
+    expect(dddFromPhone('+553003001234')).toBe(''); // 0300 -> "30" não é DDD válido
+  });
+
   it('retorna vazio sem DDI/telefone', () => {
     expect(dddFromPhone('')).toBe('');
     expect(dddFromPhone(null)).toBe('');
