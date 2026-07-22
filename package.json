@@ -1,23 +1,40 @@
 {
   "name": "maps-to-leads",
-  "version": "1.0.0",
-  "description": "É um projeto open source com a iniciativa de gerar prospecção de leads de forma mais automatizada e geral, de maneira nenhuma apoiamos ou incentivamos a prática de SPAM, utilize com sabedoria.",
-  "main": "./index.js",
+  "version": "2.0.0",
+  "description": "API open source de prospecção de leads a partir do Google Maps (TypeScript + Playwright). De maneira nenhuma apoiamos ou incentivamos a prática de SPAM, utilize com sabedoria.",
+  "main": "dist/index.js",
+  "engines": {
+    "node": ">=18.18"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node ./index.js"
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "postinstall": "playwright install chromium"
   },
   "author": "Jonathan Henrique",
   "homepage": "https://apigratis.com.br",
   "license": "MIT",
   "dependencies": {
-    "body-parser": "^1.20.1",
-    "dotenv": "^16.0.3",
-    "express": "^4.18.2",
+    "better-sqlite3": "^11.5.0",
+    "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0",
+    "express": "^4.21.1",
     "express-queue": "^0.0.13",
-    "mysql": "^2.18.1",
-    "puppeteer": "^19.2.2",
-    "puppeteer-extra": "^3.3.4",
-    "request": "^2.88.2"
+    "pino": "^9.5.0",
+    "playwright": "^1.49.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.10.1",
+    "pino-pretty": "^13.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.6"
   }
 }

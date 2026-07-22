@@ -1,2 +1,14 @@
-
 /node_modules
+.env
+
+# Build
+/dist
+
+# Banco de dados local (SQLite)
+/data
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
