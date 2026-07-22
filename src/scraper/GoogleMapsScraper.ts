@@ -100,6 +100,11 @@ export class GoogleMapsScraper {
     const extracted = makeSlots(total);
     const final = params.infosExtras ? makeSlots(total) : extracted;
 
+    // Latência/erro da extração por índice. O report (dashboard + SQLite) acontece
+    // DEPOIS do enriquecimento quando infosExtras está ligado, para o painel e o
+    // banco guardarem também o email/redes achados no site.
+    const metas: Array<{ ms: number; errored: boolean }> = new Array(total);
+
     // POOL DE EXTRAÇÃO — respeita o semáforo GLOBAL de abas.
     let exCursor = 0;
     const extractWorker = async (workerId: number): Promise<void> => {
@@ -125,21 +130,27 @@ export class GoogleMapsScraper {
           logger.warn({ err, workerId, link: place.link }, 'Erro ao extrair lugar');
         }
 
-        reporter.lead({ dados, place, ms: Date.now() - t0, errored });
+        const meta = { ms: Date.now() - t0, errored };
+        metas[i] = meta;
+        // Sem enriquecimento: reporta/persiste já. Com enriquecimento: o report
+        // acontece no enrichWorker, após visitar o site.
+        if (!params.infosExtras) reporter.lead({ dados, place, ms: meta.ms, errored });
         slot.resolve(dados);
       }
     };
 
     // POOL DE ENRIQUECIMENTO (só quando infosExtras) — visita o site em PARALELO,
-    // sem segurar aba/semáforo. Consome os leads conforme a extração os libera.
+    // sem segurar aba/semáforo. Consome os leads conforme a extração os libera e,
+    // só então, reporta/persiste o lead JÁ enriquecido.
     let enCursor = 0;
     const enrichWorker = async (): Promise<void> => {
       while (true) {
         const i = enCursor++;
         if (i >= total) break;
+        const place = places[i];
         const exSlot = extracted[i];
         const fiSlot = final[i];
-        if (!exSlot || !fiSlot) break;
+        if (!place || !exSlot || !fiSlot) break;
         const dados = await exSlot.promise; // espera a extração deste índice
         if (dados) {
           try {
@@ -148,6 +159,8 @@ export class GoogleMapsScraper {
             /* enrich é best-effort */
           }
         }
+        const meta = metas[i] ?? { ms: 0, errored: false };
+        reporter.lead({ dados, place, ms: meta.ms, errored: meta.errored });
         fiSlot.resolve(dados);
       }
     };

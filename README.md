@@ -169,7 +169,7 @@ curl --location --request POST 'http://127.0.0.1:9000/api/find' \
     "contacts": {
       "phone": "+558007025700",
       "whatsapp": "",
-      "ddd": "80",
+      "ddd": "",
       "email": ""
     },
     "social": {
@@ -216,6 +216,12 @@ Acesse `http://SEU_HOST:9000/manager` e informe o token (ou use `?token=...`).
 Jobs e leads são gravados em **SQLite** (`DB_PATH`, padrão `./data/leads.db`) — o
 histórico sobrevive a reinícios e é re-hidratado no boot. O estado ao vivo do painel
 continua em memória para respostas instantâneas.
+
+Cada lead é persistido com **todos os dados**: contatos (telefone/whatsapp/ddd/email),
+social (instagram/facebook/site), **endereço completo**, nota/avaliações, score/tier e o
+`extra` do enriquecimento — os mesmos campos que saem no **XLSX** (`/manager/api/leads.xlsx`).
+Quando `onlyInfosExtras` está ligado, o lead é gravado **já enriquecido** (após visitar o
+site). O schema tem **migração automática** (ALTER) para bancos criados em versões anteriores.
 
 ## Configuração
 
