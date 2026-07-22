@@ -4,38 +4,9 @@ API open source de prospecção de leads a partir do Google Maps: extrai nome, t
 WhatsApp, site e endereço estruturado por palavra-chave e dispara os resultados em um
 webhook. **Não apoiamos nem incentivamos a prática de SPAM** — utilize com sabedoria.
 
-> **v2** — reescrito em **TypeScript**, com scraping via **Playwright**, arquitetura
-> modular em camadas, persistência em **SQLite** e um painel de monitoramento ao vivo.
-
-## Arquitetura
-
-```
-src/
-  config/     # env validada (zod) + logger (pino)
-  domain/     # tipos + score do lead (puro)
-  parsing/    # normalização de telefone/endereço BR (puro)
-  scraper/    # Playwright: browser, semáforo, páginas (feed/detalhe), orquestrador
-  webhook/    # cliente de webhook (fetch + timeout + retry)
-  jobs/       # store reativo em memória + repositório SQLite
-  api/        # Express: middlewares, rotas (/api/find, /manager), servidor
-  index.ts    # composition root + graceful shutdown
-web/            # painel React (Vite + TS) — código-fonte do dashboard
-public/manager/ # painel buildado, servido pelo Express (gerado por `build:web`)
-tests/          # testes das funções puras (vitest)
-```
-
-O painel `/manager` é uma **SPA React** (workspace `web/`, Vite + TypeScript). Em
-produção o Express serve o build de `public/manager/`; em dev, o Vite roda com HMR e
-faz proxy da API/SSE para o backend.
-
 O scraping roda em **duas fases**: a Fase 1 (síncrona) rola o feed, conta os lugares e
 retorna o total na resposta HTTP; a Fase 2 (assíncrona) extrai cada lugar em um pool
 paralelo e dispara os webhooks **na ordem original**.
-
-## Requisitos
-
-- Node.js **>= 18.18**
-- No Linux, dependências de sistema do Chromium (o Playwright instala com o comando abaixo).
 
 ## Instalação
 
@@ -49,35 +20,6 @@ npx playwright install --with-deps chromium
 ```
 
 ## Rodando
-
-```bash
-npm run dev        # API (tsx watch) + painel React (Vite/HMR) juntos
-                   #   painel em dev: http://localhost:5173/manager/
-
-npm run build      # builda o painel React (public/manager/) + compila o TS (dist/)
-npm start          # produção (node dist/index.js) — serve API + painel
-
-npm run typecheck  # checagem de tipos do backend
-npm test           # testes das funções puras
-
-# só o painel:
-npm run dev:web    # Vite dev server isolado
-npm run build:web  # build do painel -> public/manager/
-```
-
-Em background com PM2 (após `npm run build`):
-
-```bash
-npm install -g pm2
-pm2 start dist/index.js --name "API - MAPS TO LEADS"
-```
-
-## Docker
-
-Imagem multi-stage que já inclui o **Chromium do Playwright** (com as libs de
-sistema) e builda o **painel React**. O SQLite é persistido em um volume.
-
-Pré-requisito: crie o `.env` com o `MANAGER_TOKEN` (o compose lê dele).
 
 ```bash
 cp .env_example .env          # defina MANAGER_TOKEN
@@ -97,11 +39,6 @@ docker run -d --name maps-to-lead -p 9000:9000 \
   --init --shm-size=1g \
   maps-to-lead
 ```
-
-Notas:
-- Dentro do container o app ouve em `HOST=0.0.0.0` (já definido na imagem/compose).
-- O Chromium já vem instalado — **não** é preciso rodar `playwright install`.
-- Tunáveis (`PARSE_CONCURRENCY`, `MAX_CONCURRENCY`, `BLOCK_RESOURCES`, …) via variáveis de ambiente.
 
 ## API
 
@@ -210,50 +147,6 @@ tiers A/B/C/D), latência e **download dos leads em `.xlsx`**. Login por **token
 - `GET /manager/api/jobs/:id/leads` — leads de um job, paginado (token)
 
 Acesse `http://SEU_HOST:9000/manager` e informe o token (ou use `?token=...`).
-
-## Persistência
-
-Jobs e leads são gravados em **SQLite** (`DB_PATH`, padrão `./data/leads.db`) — o
-histórico sobrevive a reinícios e é re-hidratado no boot. O estado ao vivo do painel
-continua em memória para respostas instantâneas.
-
-Cada lead é persistido com **todos os dados**: contatos (telefone/whatsapp/ddd/email),
-social (instagram/facebook/site), **endereço completo**, nota/avaliações, score/tier e o
-`extra` do enriquecimento — os mesmos campos que saem no **XLSX** (`/manager/api/leads.xlsx`).
-Quando `onlyInfosExtras` está ligado, o lead é gravado **já enriquecido** (após visitar o
-site). O schema tem **migração automática** (ALTER) para bancos criados em versões anteriores.
-
-## Configuração
-
-Todas as variáveis (com padrões) estão documentadas em [`.env_example`](.env_example):
-paralelismo (`PARSE_CONCURRENCY`, `MAX_CONCURRENCY`), browser (`HEADLESS`,
-`BLOCK_RESOURCES`, timeouts), webhook (`WEBHOOK_TIMEOUT_MS`, `WEBHOOK_RETRIES`) e
-seletores (`LISTING`, `SCROLL`).
-
-## Nginx (reverse proxy)
-
-```nginx
-upstream mapslead { server 127.0.0.1:9000; keepalive 8; }
-server {
-    server_name SEU_DOMINIO;
-    location / {
-      proxy_set_header X-Real-IP $remote_addr;
-      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-      proxy_set_header Host $http_host;
-      proxy_http_version 1.1;
-      proxy_set_header Connection '';   # importante para o SSE do /manager
-      proxy_buffering off;              # importante para o SSE do /manager
-      proxy_pass http://mapslead/;
-      proxy_redirect off;
-    }
-    listen 80;
-}
-```
-
-```bash
-ln -s /etc/nginx/sites-available/mapslead /etc/nginx/sites-enabled/mapslead
-certbot --nginx   # SSL
-```
 
 ## Screen
 <img width="1055" height="737" alt="image" src="https://github.com/user-attachments/assets/b16d90b3-d573-4ccf-b3ef-87bf2a7305ee" />
