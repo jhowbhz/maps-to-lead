@@ -250,8 +250,7 @@ certbot --nginx   # SSL
 ```
 
 ## Screen
-<img width="1911" height="904" alt="image" src="https://github.com/user-attachments/assets/13d69c79-12be-4294-8591-8563b4c555f3" />
-
+<img width="1055" height="737" alt="image" src="https://github.com/user-attachments/assets/b16d90b3-d573-4ccf-b3ef-87bf2a7305ee" />
 
 ## Licença
 
