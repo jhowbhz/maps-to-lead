@@ -15,12 +15,19 @@ export class WebhookClient {
     private readonly retries: number = config.WEBHOOK_RETRIES,
   ) {}
 
-  async send(url: string, payload: LeadPayload): Promise<boolean> {
+  /** Envia o webhook. `opts` sobrescreve timeout/retries por requisição. */
+  async send(
+    url: string,
+    payload: LeadPayload,
+    opts?: { timeoutMs?: number; retries?: number },
+  ): Promise<boolean> {
+    const timeoutMs = opts?.timeoutMs ?? this.timeoutMs;
+    const retries = opts?.retries ?? this.retries;
     const body = JSON.stringify(payload);
 
-    for (let attempt = 0; attempt <= this.retries; attempt++) {
+    for (let attempt = 0; attempt <= retries; attempt++) {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
       try {
         const res = await fetch(url, {
           method: 'POST',
@@ -39,7 +46,7 @@ export class WebhookClient {
         clearTimeout(timer);
       }
 
-      if (attempt < this.retries) await delay(300 * (attempt + 1));
+      if (attempt < retries) await delay(300 * (attempt + 1));
     }
 
     return false;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isMobileBR, normalizePhoneBR } from '../src/parsing/phone';
+import { dddFromPhone, isMobileBR, normalizePhoneBR } from '../src/parsing/phone';
 
 describe('normalizePhoneBR', () => {
   it('adiciona DDI 55 quando veio só com DDD (celular, 11 dígitos)', () => {
@@ -38,5 +38,20 @@ describe('isMobileBR', () => {
 
   it('rejeita vazio', () => {
     expect(isMobileBR('')).toBe(false);
+  });
+});
+
+describe('dddFromPhone', () => {
+  it('extrai o DDD de um celular (+5531...)', () => {
+    expect(dddFromPhone('+5531971711407')).toBe('31');
+  });
+
+  it('extrai o DDD de um fixo (+553133...)', () => {
+    expect(dddFromPhone('+553133334444')).toBe('31');
+  });
+
+  it('retorna vazio sem DDI/telefone', () => {
+    expect(dddFromPhone('')).toBe('');
+    expect(dddFromPhone(null)).toBe('');
   });
 });

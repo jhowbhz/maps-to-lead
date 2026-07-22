@@ -19,10 +19,14 @@ src/
   jobs/       # store reativo em memória + repositório SQLite
   api/        # Express: middlewares, rotas (/api/find, /manager), servidor
   index.ts    # composition root + graceful shutdown
-public/
-  manager.html  # dashboard ao vivo (SSE)
+web/            # painel React (Vite + TS) — código-fonte do dashboard
+public/manager/ # painel buildado, servido pelo Express (gerado por `build:web`)
 tests/          # testes das funções puras (vitest)
 ```
+
+O painel `/manager` é uma **SPA React** (workspace `web/`, Vite + TypeScript). Em
+produção o Express serve o build de `public/manager/`; em dev, o Vite roda com HMR e
+faz proxy da API/SSE para o backend.
 
 O scraping roda em **duas fases**: a Fase 1 (síncrona) rola o feed, conta os lugares e
 retorna o total na resposta HTTP; a Fase 2 (assíncrona) extrai cada lugar em um pool
@@ -47,13 +51,18 @@ npx playwright install --with-deps chromium
 ## Rodando
 
 ```bash
-npm run dev        # desenvolvimento (tsx watch, hot-reload)
+npm run dev        # API (tsx watch) + painel React (Vite/HMR) juntos
+                   #   painel em dev: http://localhost:5173/manager/
 
-npm run build      # compila TS -> dist/
-npm start          # produção (node dist/index.js)
+npm run build      # builda o painel React (public/manager/) + compila o TS (dist/)
+npm start          # produção (node dist/index.js) — serve API + painel
 
-npm run typecheck  # checagem de tipos
+npm run typecheck  # checagem de tipos do backend
 npm test           # testes das funções puras
+
+# só o painel:
+npm run dev:web    # Vite dev server isolado
+npm run build:web  # build do painel -> public/manager/
 ```
 
 Em background com PM2 (após `npm run build`):
@@ -63,82 +72,139 @@ npm install -g pm2
 pm2 start dist/index.js --name "API - MAPS TO LEADS"
 ```
 
+## Docker
+
+Imagem multi-stage que já inclui o **Chromium do Playwright** (com as libs de
+sistema) e builda o **painel React**. O SQLite é persistido em um volume.
+
+Pré-requisito: crie o `.env` com o `MANAGER_TOKEN` (o compose lê dele).
+
+```bash
+cp .env_example .env          # defina MANAGER_TOKEN
+docker compose up -d --build
+```
+
+- Painel: `http://localhost:9000/manager`
+- Os dados (SQLite) persistem no volume `leads-data` — sobrevivem a `down`/`up`.
+
+Sem compose:
+
+```bash
+docker build -t maps-to-lead .
+docker run -d --name maps-to-lead -p 9000:9000 \
+  -e MANAGER_TOKEN=seu-token \
+  -v maps-to-lead-data:/app/data \
+  --init --shm-size=1g \
+  maps-to-lead
+```
+
+Notas:
+- Dentro do container o app ouve em `HOST=0.0.0.0` (já definido na imagem/compose).
+- O Chromium já vem instalado — **não** é preciso rodar `playwright install`.
+- Tunáveis (`PARSE_CONCURRENCY`, `MAX_CONCURRENCY`, `BLOCK_RESOURCES`, …) via variáveis de ambiente.
+
 ## API
 
 ### `POST /api/find`
 
-| campo           | tipo    | obrigatório | descrição                                             |
-|-----------------|---------|-------------|-------------------------------------------------------|
-| `query`         | string  | ✅          | palavra-chave da busca (ex: `"Barbearia, Contagem"`)  |
-| `webhook`       | string  | ✅          | URL que receberá os leads (um POST por lead)          |
-| `qt`            | number  | ❌          | quantos lugares buscar (padrão `20`, máx `1000`)      |
-| `onlyWithPhone` | boolean | ❌          | ignora lugares sem telefone (padrão `false`)          |
-| `time`, `hook`  | any     | ❌          | aceitos por compatibilidade, não utilizados           |
+Traz **tudo** que encontrar na região (sem limite de quantidade) e responde
+**na hora** com o `jobId` — a extração roda em segundo plano. Acompanhe em `/manager`.
+
+O body é estruturado em três objetos:
+
+| campo                    | tipo    | obrigatório | descrição                                                            |
+|--------------------------|---------|-------------|----------------------------------------------------------------------|
+| `query.type`             | string  | ✅          | ramo/palavra-chave (ex.: `software`, `restaurante`, `mecânica`)      |
+| `query.city`             | string  | ❌          | cidade/bairro                                                        |
+| `query.state`            | string  | ❌          | estado                                                               |
+| `webhook.url`            | string  | ✅          | URL que receberá os leads (um POST por lead)                         |
+| `webhook.retry`          | boolean | ❌          | `false` = sem retentativas. Padrão `true`                            |
+| `webhook.timeout`        | number  | ❌          | timeout por POST, em ms (1000–120000)                                |
+| `options.onlyWithPhone`  | boolean | ❌          | ignora lugares sem telefone (padrão `false`)                         |
+| `options.onlyRepeat`     | boolean | ❌          | `false` = **não** envia telefones repetidos (dedupe). Padrão `true`  |
+| `options.onlyInfosExtras`| boolean | ❌          | `true` = visita o site do lead (pool paralelo) e extrai email/redes. Padrão `false` |
+
+A busca do Maps é montada de `type, city, state` (ex.: `"software, centro, rio de janeiro"`).
 
 ```bash
 curl --location --request POST 'http://127.0.0.1:9000/api/find' \
 --header 'Content-Type: application/json' \
 --data-raw '{
-    "query": "Barbearia Cabral, Contagem",
-    "webhook": "https://webhook.site/<seu-id>",
-    "qt": 20,
-    "onlyWithPhone": true
+    "query":   { "type": "software", "city": "centro", "state": "rio de janeiro" },
+    "webhook": { "url": "https://webhook.site/<seu-id>", "retry": false, "timeout": 6000 },
+    "options": { "onlyWithPhone": true, "onlyRepeat": false, "onlyInfosExtras": true }
 }'
 ```
 
-**Resposta `200`** (o `total` já vem da Fase 1; os leads chegam ao webhook em seguida):
+**Resposta `200`** (instantânea — a busca roda em background; sem contagem no retorno):
 
 ```json
 {
   "error": false,
-  "message": "Encontramos 20 lugares. Você receberá os dados em seu webhook em até 5 minutos.",
-  "query": "Barbearia Cabral, Contagem",
-  "requested": 20,
-  "total": 20,
+  "message": "A busca foi iniciada. Você receberá os resultados no seu webhook em até 5 minutos.",
   "jobId": "job_1737500000000_1",
-  "onlyWithPhone": true,
+  "query": { "type": "software", "city": "centro", "state": "rio de janeiro" },
+  "options": { "onlyWithPhone": true, "onlyRepeat": false },
   "webhook": "https://webhook.site/<seu-id>"
 }
 ```
 
-**Payload enviado ao webhook** (um por lead), com o endereço já estruturado:
+**Payload enviado ao webhook** (um por lead):
 
 ```json
 {
   "lead": {
-    "name": "Barbearia Alamedas",
-    "rating": "4.7",
-    "pic": "https://lh5.googleusercontent.com/p/...",
+    "name": "Group Software",
+    "pic": "https://ssl.gstatic.com/local/servicebusiness/default_user.png",
+    "rating": { "note": "4.6", "quantity": 403 },
     "address": {
-      "street": "Alameda dos Flamingos",
-      "number": "213",
-      "neighborhood": "Cabral",
-      "city": "Contagem",
+      "street": "R. Santa Catarina",
+      "number": "1631",
+      "neighborhood": "Lourdes",
+      "city": "Belo Horizonte",
       "uf": "MG",
-      "cep": "32146-036",
-      "full": "Alameda dos Flamingos, 213 - Cabral, Contagem - MG, 32146-036"
+      "cep": "30170-081",
+      "full": "R. Santa Catarina, 1631 - Lourdes, Belo Horizonte - MG, 30170-081"
     },
-    "phone": "+5531988989591",
-    "whatsapp": "+5531988989591",
-    "website": "https://barbeariaalamedas.negocio.site"
-  },
-  "infos": [
-    "Alameda dos Flamingos, 213 - Cabral, Contagem - MG, 32146-036",
-    "+5531988989591",
-    "https://barbeariaalamedas.negocio.site"
-  ]
+    "contacts": {
+      "phone": "+558007025700",
+      "whatsapp": "",
+      "ddd": "80",
+      "email": ""
+    },
+    "social": {
+      "instagram": "https://www.instagram.com/groupsoftware/",
+      "facebook": "https://www.facebook.com/groupsoftware",
+      "site": "https://www.groupsoftware.com.br/"
+    },
+    "extra": {
+      "site_visitado": true,
+      "campos_encontrados": ["instagram", "facebook"],
+      "email": "",
+      "instagram": "https://www.instagram.com/groupsoftware/",
+      "facebook": "https://www.facebook.com/groupsoftware"
+    }
+  }
 }
 ```
 
+- `ddd` é derivado do telefone. Se o **link do Maps** já for um Instagram/Facebook, ele é
+  roteado automaticamente para `social.instagram`/`facebook` (sem visitar site).
+- `extra` só é preenchido quando `options.onlyInfosExtras: true` — aí o site do lead é
+  visitado (num **pool paralelo**) e `campos_encontrados` lista o que achou (email/instagram/facebook).
+
 ## Painel de monitoramento — `/manager`
 
-Dashboard ao vivo (SSE) com jobs, progresso, % com telefone/WhatsApp, score dos leads
-(0–100, tiers A/B/C/D), latência e feed de leads recentes. Login por **token**
+SPA **React** ao vivo (SSE) com KPIs, abas **Processos** e **Leads** (ambas em tabela,
+paginadas de 12 em 12), progresso, % com telefone/WhatsApp, score dos leads (0–100,
+tiers A/B/C/D), latência e **download dos leads em `.xlsx`**. Login por **token**
 (`MANAGER_TOKEN` no `.env`).
 
-- `GET /manager` — painel
+- `GET /manager` — painel (SPA React)
 - `GET /manager/api/state` — snapshot JSON (token)
 - `GET /manager/stream` — stream SSE ao vivo (token)
+- `GET /manager/api/leads` — leads persistidos, paginado (token)
+- `GET /manager/api/leads.xlsx` — exporta os leads em planilha (token)
 - `GET /manager/api/jobs` — histórico de jobs persistidos (token)
 - `GET /manager/api/jobs/:id/leads` — leads de um job, paginado (token)
 

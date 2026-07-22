@@ -5,7 +5,7 @@ import type { Place } from '../../domain/types';
 import { selectors } from '../selectors';
 
 // ---------------------------------------------------------------------------
-// FASE 1: abrir a busca, rolar o feed até juntar `qt` lugares e coletá-los.
+// FASE 1: abrir a busca, rolar o feed até o fim e coletar TODOS os lugares.
 // Tudo aqui é interação de página (Playwright) — sem regra de negócio.
 // ---------------------------------------------------------------------------
 
@@ -20,16 +20,11 @@ export async function performSearch(page: Page, query: string): Promise<void> {
 }
 
 /**
- * Rola o feed até juntar `qt` lugares únicos OU acabar a lista. O Google carrega
- * os cards de forma preguiçosa conforme você rola; então "varremos página por
- * página" até bater a meta ou o fim.
+ * Rola o feed até ACABAR a lista (traz tudo que existir na região). O Google
+ * carrega os cards de forma preguiçosa conforme você rola; então "varremos
+ * página por página" até o fim ou até parar de crescer.
  */
-export async function scrollFeed(
-  page: Page,
-  qt: number,
-  waitMs = 1200,
-  maxIdleRounds = 5,
-): Promise<void> {
+export async function scrollFeed(page: Page, waitMs = 1200, maxIdleRounds = 5): Promise<void> {
   let previousCount = 0;
   let idleRounds = 0;
 
@@ -44,9 +39,7 @@ export async function scrollFeed(
       return links.size;
     }, selectors.listing);
 
-    logger.debug(`Scroll: ${count}/${qt} lugares carregados`);
-
-    if (count >= qt) break;
+    logger.debug(`Scroll: ${count} lugares carregados`);
 
     // O Google mostra "Você chegou ao final da lista." quando acaba.
     const reachedEnd = await page.evaluate((sel: string) => {
@@ -75,8 +68,8 @@ export async function scrollFeed(
   }
 }
 
-/** Coleta os lugares do feed (nome, nota, avaliações, link, imagem). */
-export async function collectPlaces(page: Page, qt: number): Promise<Place[]> {
+/** Coleta TODOS os lugares do feed (nome, nota, avaliações, link, imagem). */
+export async function collectPlaces(page: Page): Promise<Place[]> {
   try {
     const places = await page.evaluate((listingSelector: string) => {
       const clean = (s: string | null | undefined) => (s || '').replace(/\s+/g, ' ').trim();
@@ -124,8 +117,7 @@ export async function collectPlaces(page: Page, qt: number): Promise<Place[]> {
       return result;
     }, selectors.listing);
 
-    // Corta exatamente na quantidade pedida (o feed pode ter carregado alguns a mais).
-    return qt ? places.slice(0, qt) : places;
+    return places;
   } catch (err) {
     logger.error({ err }, 'Erro ao coletar lugares do feed');
     return [];

@@ -26,3 +26,13 @@ export function isMobileBR(normalized: string | null | undefined): boolean {
   const d = String(normalized ?? '').replace(/\D/g, '');
   return d.length === 13 && d.startsWith('55') && d[4] === '9';
 }
+
+/**
+ * Extrai o DDD (2 dígitos após o DDI 55) de um número normalizado (+55DD...).
+ * Retorna '' quando não há DDI/DDD reconhecível.
+ */
+export function dddFromPhone(normalized: string | null | undefined): string {
+  const d = String(normalized ?? '').replace(/\D/g, '');
+  if (d.startsWith('55') && d.length >= 12) return d.slice(2, 4);
+  return '';
+}

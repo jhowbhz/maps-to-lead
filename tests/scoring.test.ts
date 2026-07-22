@@ -1,18 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import { scoreLead } from '../src/domain/scoring';
-import type { LeadPayload, Place } from '../src/domain/types';
+import type { Address, LeadPayload, Place } from '../src/domain/types';
 
 const place = (over: Partial<Place> = {}): Place => ({
   name: 'X', rating: '0', reviews: '0', price: '', link: '', image: '', ...over,
 });
 
-const payload = (over: Partial<LeadPayload['lead']> = {}): LeadPayload => ({
+const payload = (over: { phone?: string; whatsapp?: string; site?: string; address?: Partial<Address> } = {}): LeadPayload => ({
   lead: {
-    name: 'X', rating: '0', pic: '', phone: '', whatsapp: '', website: '',
-    address: { street: '', number: '', neighborhood: '', city: '', uf: '', cep: '', full: '' },
-    ...over,
+    name: 'X',
+    pic: '',
+    rating: { note: '0', quantity: 0 },
+    address: { street: '', number: '', neighborhood: '', city: '', uf: '', cep: '', full: '', ...over.address },
+    contacts: { phone: over.phone ?? '', whatsapp: over.whatsapp ?? '', ddd: '', email: '' },
+    social: { instagram: '', facebook: '', site: over.site ?? '' },
+    extra: { site_visitado: false, campos_encontrados: [], email: '', instagram: '', facebook: '' },
   },
-  infos: [],
 });
 
 describe('scoreLead', () => {
@@ -27,7 +30,7 @@ describe('scoreLead', () => {
       payload({
         phone: '+553133334444',
         whatsapp: '+5531999984339',
-        website: 'https://x.com',
+        site: 'https://x.com',
         address: { street: 'R', number: '1', neighborhood: 'C', city: 'BH', uf: 'MG', cep: '', full: 'x' },
       }),
       place({ rating: '5', reviews: '500' }),
@@ -39,7 +42,7 @@ describe('scoreLead', () => {
     expect(r.tier).toBe('A');
   });
 
-  it('telefone sem whatsapp e sem site rende tier D/C', () => {
+  it('telefone sem whatsapp e sem site rende tier C/D', () => {
     const r = scoreLead(payload({ phone: '+553133334444' }), place({ rating: '4', reviews: '10' }));
     expect(r.breakdown.phone).toBe(30);
     expect(r.breakdown.whatsapp).toBe(0);

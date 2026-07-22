@@ -2,8 +2,9 @@ import type { BrowserContext } from 'playwright';
 import { config } from '../../config/env';
 import { logger } from '../../config/logger';
 import type { LeadPayload, Place, PlaceDetail } from '../../domain/types';
-import { isMobileBR, normalizePhoneBR } from '../../parsing/phone';
+import { dddFromPhone, isMobileBR, normalizePhoneBR } from '../../parsing/phone';
 import { parseAddressBR } from '../../parsing/address';
+import { routeSiteLink } from '../../parsing/social';
 import { selectors } from '../selectors';
 
 const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -58,7 +59,13 @@ export async function extractPlaceDetail(
 
         const website = (document.querySelector(sel.website) as HTMLAnchorElement | null)?.href || '';
 
-        return { name, address, phone, website } satisfies PlaceDetail;
+        // Email via link mailto: na própria página do Maps (raro, mas de graça).
+        const mailtoEl = document.querySelector('a[href^="mailto:"]');
+        const email = mailtoEl
+          ? ((mailtoEl.getAttribute('href') || '').replace(/^mailto:/i, '').split('?')[0] || '').trim()
+          : '';
+
+        return { name, address, phone, website, email } satisfies PlaceDetail;
       }, selectors.detail);
 
       return buildPayload(place, detail, opts.onlyWithPhone);
@@ -77,15 +84,17 @@ export async function extractPlaceDetail(
   throw lastErr;
 }
 
-// Monta o payload final: dados do lugar aninhados em `lead` (endereço já
-// estruturado) + `infos` no topo como resumo em texto puro.
+// Monta o payload final. O link do Maps é roteado automaticamente: se o "site"
+// for na verdade um Instagram/Facebook, vai pro campo certo. O `extra` só é
+// preenchido depois, pelo enriquecimento (visita ao site) — aqui fica vazio.
 function buildPayload(place: Place, detail: PlaceDetail, onlyWithPhone: boolean): LeadPayload | null {
-  const number = normalizePhoneBR(detail.phone);
-  const whatsapp = isMobileBR(number) ? number : '';
+  const phone = normalizePhoneBR(detail.phone);
+  const whatsapp = isMobileBR(phone) ? phone : '';
   const address = parseAddressBR(detail.address);
+  const routed = routeSiteLink(detail.website); // detecta ig/fb no link do Maps
 
   // Opcional: quando onlyWithPhone=true, ignora lugares sem telefone.
-  if (onlyWithPhone && !number) {
+  if (onlyWithPhone && !phone) {
     logger.debug({ name: detail.name || place.name }, 'Pulado (sem telefone)');
     return null;
   }
@@ -93,13 +102,24 @@ function buildPayload(place: Place, detail: PlaceDetail, onlyWithPhone: boolean)
   return {
     lead: {
       name: detail.name || place.name || '',
-      rating: place.rating || '0',
       pic: place.image || '',
+      rating: {
+        note: place.rating || '0',
+        quantity: parseInt(String(place.reviews || '0').replace(/\D/g, ''), 10) || 0,
+      },
       address,
-      phone: number,
-      whatsapp,
-      website: detail.website || '',
+      contacts: {
+        phone,
+        whatsapp,
+        ddd: dddFromPhone(phone),
+        email: detail.email || '',
+      },
+      social: {
+        instagram: routed.instagram,
+        facebook: routed.facebook,
+        site: routed.site,
+      },
+      extra: { site_visitado: false, campos_encontrados: [], email: '', instagram: '', facebook: '' },
     },
-    infos: [address.full, number, detail.website].filter(Boolean),
   };
 }

@@ -60,7 +60,7 @@ export class JobStore extends EventEmitter {
     }
   }
 
-  createJob({ query, qt, onlyWithPhone }: CreateJobInput): Job {
+  createJob({ query, onlyWithPhone }: CreateJobInput): Job {
     const now = Date.now();
     if (this.startedAt === null) this.startedAt = now;
 
@@ -68,7 +68,7 @@ export class JobStore extends EventEmitter {
     const job: Job = {
       id: `job_${now}_${this.seq}`,
       query: query || '',
-      requested: qt || 0,
+      requested: 0, // `qt` foi removido; mantido no schema por compat (sempre 0)
       onlyWithPhone: !!onlyWithPhone,
       status: 'scraping', // scraping -> parsing -> done | error
       createdAt: now,
@@ -144,10 +144,12 @@ export class JobStore extends EventEmitter {
     }
 
     const src = dados.lead;
-    if (src.phone) { c.withPhone += 1; this.totals.withPhone += 1; }
+    const { phone, whatsapp } = src.contacts;
+    const site = src.social.site;
+    if (phone) { c.withPhone += 1; this.totals.withPhone += 1; }
     else { c.withoutPhone += 1; this.totals.withoutPhone += 1; }
-    if (src.whatsapp) { c.withWhatsapp += 1; this.totals.withWhatsapp += 1; }
-    if (src.website) { c.withWebsite += 1; this.totals.withWebsite += 1; }
+    if (whatsapp) { c.withWhatsapp += 1; this.totals.withWhatsapp += 1; }
+    if (site) { c.withWebsite += 1; this.totals.withWebsite += 1; }
 
     const s = scoreLead(dados, place);
     job.score.sum += s.score;
@@ -158,9 +160,9 @@ export class JobStore extends EventEmitter {
     const lead: LeadRecord = {
       jobId: job.id,
       name: src.name || '',
-      phone: src.phone || '',
-      whatsapp: src.whatsapp || '',
-      website: src.website || '',
+      phone: phone || '',
+      whatsapp: whatsapp || '',
+      website: site || '',
       rating: place?.rating || '',
       reviews: place?.reviews || '',
       score: s.score,

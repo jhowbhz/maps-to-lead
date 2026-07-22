@@ -1,0 +1,40 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: maps-to-lead
+    container_name: maps-to-lead
+    restart: unless-stopped
+    init: true # reap de processos filhos do Chromium (PID 1)
+    ports:
+      # Porta dinâmica: definida por PORT no .env (default 9000). Host e container
+      # usam a mesma porta, então o app escuta exatamente onde é publicado.
+      - "${PORT:-9000}:${PORT:-9000}"
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0 # dentro do container precisa ouvir em todas as interfaces
+      PORT: ${PORT:-9000}
+      DB_PATH: /app/data/leads.db
+      # Lido do .env deste diretório (docker compose carrega o .env automaticamente).
+      MANAGER_TOKEN: ${MANAGER_TOKEN:?defina MANAGER_TOKEN no .env}
+      PARSE_CONCURRENCY: ${PARSE_CONCURRENCY:-4}
+      MAX_CONCURRENCY: ${MAX_CONCURRENCY:-8}
+      BLOCK_RESOURCES: ${BLOCK_RESOURCES:-true}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    volumes:
+      - leads-data:/app/data # persiste o SQLite entre reinícios
+    shm_size: "1gb" # margem para o Chromium (o app já usa --disable-dev-shm-usage)
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "require('http').get('http://127.0.0.1:'+(process.env.PORT||9000)+'/',r=>process.exit(r.statusCode<500?0:1)).on('error',()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  leads-data:

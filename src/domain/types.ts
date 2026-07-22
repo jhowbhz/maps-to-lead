@@ -19,6 +19,7 @@ export interface PlaceDetail {
   address: string;
   phone: string;
   website: string;
+  email: string; // via link mailto: na página do Maps (raro)
 }
 
 /** Endereço brasileiro já quebrado em partes. */
@@ -32,21 +33,53 @@ export interface Address {
   full: string;
 }
 
+/** Nota do lugar: nota (0–5) + quantidade de avaliações. */
+export interface Rating {
+  note: string;
+  quantity: number;
+}
+
+/** Contatos do lead. `ddd` é derivado do telefone; `email` não vem do Maps. */
+export interface Contacts {
+  phone: string;
+  whatsapp: string;
+  ddd: string;
+  email: string;
+}
+
+/** Redes/site. `instagram`/`facebook` podem vir do link do Maps ou do site. */
+export interface Social {
+  instagram: string;
+  facebook: string;
+  site: string;
+}
+
+/**
+ * Informações extras extraídas do SITE do lead (quando options.onlyInfosExtras).
+ * `campos_encontrados` lista o que foi achado no site (ex.: ["email","instagram"]).
+ */
+export interface Extra {
+  site_visitado: boolean;
+  campos_encontrados: string[];
+  email: string;
+  instagram: string;
+  facebook: string;
+}
+
 /** Lead já estruturado (vai aninhado no payload do webhook). */
 export interface Lead {
   name: string;
-  rating: string;
   pic: string;
+  rating: Rating;
   address: Address;
-  phone: string;
-  whatsapp: string;
-  website: string;
+  contacts: Contacts;
+  social: Social;
+  extra: Extra;
 }
 
 /** Payload final enviado ao webhook do cliente. */
 export interface LeadPayload {
   lead: Lead;
-  infos: string[];
 }
 
 // --- Score ------------------------------------------------------------------
@@ -135,7 +168,6 @@ export interface Job {
 
 export interface CreateJobInput {
   query: string;
-  qt: number;
   onlyWithPhone: boolean;
 }
 

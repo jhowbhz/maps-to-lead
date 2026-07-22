@@ -24,9 +24,9 @@ export function scoreLead(dados: LeadPayload | null, place: Place | null): Score
   const b: ScoreBreakdown = { phone: 0, whatsapp: 0, website: 0, rating: 0, reviews: 0, address: 0 };
 
   const src = dados?.lead;
-  const phone = src?.phone ?? '';
-  const whatsapp = src?.whatsapp ?? '';
-  const website = src?.website ?? '';
+  const phone = src?.contacts.phone ?? '';
+  const whatsapp = src?.contacts.whatsapp ?? '';
+  const website = src?.social.site ?? '';
   const addr = src?.address;
 
   if (phone) b.phone = 30;

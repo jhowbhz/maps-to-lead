@@ -1,0 +1,141 @@
+/* ---- Tema: console de operações, dark ---------------------------------- */
+:root{
+  --bg:#0d1117; --surface:#161b22; --surface-2:#1c232c; --line:#293240;
+  --line-soft:#21262d;
+  --ink:#e6edf3; --ink-2:#adbac7; --ink-3:#8b949e; --ink-4:#6e7681;
+  --accent:#2dd4bf;                 /* teal: ao vivo / medidor principal */
+  --tier-a:#3fb950; --tier-b:#58a6ff; --tier-c:#e3b341; --tier-d:#ff5c5c;
+  --good:#3fb950; --warn:#e3b341; --bad:#ff5c5c; --info:#58a6ff;
+  --radius:12px;
+  --mono:ui-monospace,"SF Mono","Cascadia Mono","JetBrains Mono",Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body,#root{margin:0;padding:0;min-height:100vh}
+body{
+  background:
+    radial-gradient(900px 500px at 88% -8%, rgba(45,212,191,.07), transparent 60%),
+    radial-gradient(700px 500px at 0% 0%, rgba(88,166,255,.06), transparent 55%),
+    var(--bg);
+  color:var(--ink); font-family:var(--sans);
+  font-size:14px; line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:var(--info);text-decoration:none}
+a:hover{text-decoration:underline}
+.num,.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.no{color:var(--ink-4)}
+.good{color:var(--good)} .warn{color:var(--warn)} .bad{color:var(--bad)}
+.wa{color:var(--good);font-weight:700;font-size:11px}
+
+/* ---- Login ------------------------------------------------------------- */
+.login-wrap{min-height:100vh;display:grid;place-items:center;padding:24px}
+.login-card{
+  width:min(400px,100%);background:var(--surface);
+  border:1px solid var(--line-soft);border-radius:16px;padding:30px 28px;
+  box-shadow:0 24px 60px rgba(0,0,0,.45);
+}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.2px}
+.brand .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px rgba(45,212,191,.18)}
+.login-card h1{font-size:19px;margin:18px 0 4px}
+.login-card p{color:var(--ink-3);margin:0 0 20px;font-size:13px}
+label{display:block;font-size:12px;color:var(--ink-3);margin:0 0 7px;text-transform:uppercase;letter-spacing:.6px}
+input[type=password],input[type=text]{
+  width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;
+  color:var(--ink);padding:12px 13px;font-family:var(--mono);font-size:14px;outline:none;
+}
+input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(45,212,191,.15)}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;
+  margin-top:16px;background:var(--accent);color:#03211d;border:none;border-radius:10px;
+  padding:12px 16px;font-weight:700;font-size:14px;cursor:pointer;font-family:var(--sans);
+}
+.btn:hover{filter:brightness(1.07)}
+.btn.secondary{width:auto;background:transparent;color:var(--ink-2);border:1px solid var(--line);padding:7px 12px;font-weight:600;font-size:12.5px;margin:0}
+.btn.secondary:hover{border-color:var(--ink-3);filter:none}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.err{color:var(--bad);font-size:12.5px;margin-top:12px;min-height:16px}
+
+/* ---- Layout ------------------------------------------------------------ */
+.topbar{
+  position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:16px;
+  padding:14px 22px;background:rgba(13,17,23,.82);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line-soft);
+}
+.topbar .spacer{flex:1}
+.status{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-3);font-family:var(--mono)}
+.status .dot{width:9px;height:9px;border-radius:50%;background:var(--ink-4)}
+.status.live .dot{background:var(--accent);animation:pulse 1.8s infinite}
+.status.live{color:var(--accent)}
+.status.off .dot{background:var(--bad)}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(45,212,191,.5)}70%{box-shadow:0 0 0 7px rgba(45,212,191,0)}100%{box-shadow:0 0 0 0 rgba(45,212,191,0)}}
+main{padding:22px;max-width:1320px;margin:0 auto}
+.section-title{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--ink-4);margin:26px 2px 12px;font-weight:700}
+.section-title:first-child{margin-top:6px}
+
+/* ---- KPI tiles --------------------------------------------------------- */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line-soft);border-radius:var(--radius);padding:15px 16px;position:relative;overflow:hidden}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent);opacity:.9}
+.kpi.k-phone::before{background:var(--accent)}
+.kpi.k-wa::before{background:var(--good)}
+.kpi.k-score::before{background:var(--tier-b)}
+.kpi.k-lat::before{background:var(--warn)}
+.kpi.k-err::before{background:var(--bad)}
+.kpi .label{font-size:11.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.5px}
+.kpi .val{font-family:var(--mono);font-size:27px;font-weight:600;margin-top:6px;letter-spacing:-.5px}
+.kpi .val small{font-size:14px;color:var(--ink-3);font-weight:500}
+.kpi .sub{font-size:11.5px;color:var(--ink-4);margin-top:2px}
+
+/* ---- Abas (Processos | Leads) ------------------------------------------ */
+.tabs{display:flex;gap:4px;margin:26px 0 14px;border-bottom:1px solid var(--line-soft)}
+.tab{appearance:none;background:none;border:none;color:var(--ink-3);font-family:var(--sans);font-size:13.5px;
+  font-weight:600;padding:9px 14px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;
+  display:inline-flex;align-items:center;gap:7px}
+.tab:hover{color:var(--ink-2)}
+.tab.active{color:var(--ink);border-bottom-color:var(--accent)}
+.tab-count{font-family:var(--mono);font-size:11px;color:var(--ink-4);background:var(--surface-2);
+  border:1px solid var(--line-soft);border-radius:999px;padding:1px 7px}
+.tab.active .tab-count{color:var(--accent)}
+
+/* ---- Tabelas ----------------------------------------------------------- */
+.table-wrap{background:var(--surface);border:1px solid var(--line-soft);border-radius:var(--radius);overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:760px}
+th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-4);
+   font-weight:700;padding:11px 14px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--surface)}
+td{padding:10px 14px;border-bottom:1px solid var(--line-soft);vertical-align:middle;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tbody tr:hover{background:var(--surface-2)}
+.lead-name{font-weight:600;max-width:240px;overflow:hidden;text-overflow:ellipsis}
+.empty{padding:40px;text-align:center;color:var(--ink-4);font-size:13px}
+
+.badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap;letter-spacing:.3px;border:1px solid transparent}
+.badge.scraping{color:var(--info);background:rgba(88,166,255,.12);border-color:rgba(88,166,255,.3)}
+.badge.parsing{color:var(--accent);background:rgba(45,212,191,.12);border-color:rgba(45,212,191,.3)}
+.badge.done{color:var(--good);background:rgba(63,185,80,.12);border-color:rgba(63,185,80,.3)}
+.badge.error{color:var(--bad);background:rgba(255,92,92,.12);border-color:rgba(255,92,92,.3)}
+
+.meter{height:8px;background:var(--surface-2);border-radius:999px;overflow:hidden;border:1px solid var(--line-soft)}
+.meter > i{display:block;height:100%;border-radius:999px;background:var(--accent);transition:width .5s ease}
+
+/* chip de score: cor = tier, texto (letra+número) = encoding redundante */
+.score-chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-weight:700;font-size:12px;
+  padding:3px 9px;border-radius:7px;border:1px solid;min-width:58px;justify-content:center}
+.sc-a{color:var(--tier-a);border-color:rgba(63,185,80,.4);background:rgba(63,185,80,.1)}
+.sc-b{color:var(--tier-b);border-color:rgba(88,166,255,.4);background:rgba(88,166,255,.1)}
+.sc-c{color:var(--tier-c);border-color:rgba(227,179,65,.4);background:rgba(227,179,65,.1)}
+.sc-d{color:var(--tier-d);border-color:rgba(255,92,92,.4);background:rgba(255,92,92,.1)}
+
+/* ---- Paginação + toolbar ---------------------------------------------- */
+.pager{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin:14px 2px;
+  font-family:var(--mono);font-size:12.5px;color:var(--ink-3)}
+.pager button{appearance:none;background:var(--surface);border:1px solid var(--line);color:var(--ink-2);
+  border-radius:8px;padding:6px 12px;cursor:pointer;font-family:var(--sans);font-size:13px}
+.pager button:hover:not(:disabled){border-color:var(--accent);color:var(--ink)}
+.pager button:disabled{opacity:.4;cursor:not-allowed}
+/* Linha das abas + botão XLSX (sempre visível, alinhado à borda inferior) */
+.tabbar{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;
+  margin:26px 0 14px;border-bottom:1px solid var(--line-soft)}
+.tabbar .tabs{margin:0;border-bottom:none}
+.tabbar .btn.secondary{margin:0 0 8px;white-space:nowrap}
+.foot{color:var(--ink-4);font-size:11.5px;text-align:center;margin:26px 0 8px;font-family:var(--mono)}

@@ -3,6 +3,8 @@
 
 # Build
 /dist
+/public/manager
+/web/node_modules
 
 # Banco de dados local (SQLite)
 /data

@@ -1,27 +1,36 @@
 import type { RequestHandler } from 'express';
 import { z } from 'zod';
 
-// qt: quantos lugares (únicos) buscar. Inválido/<1 cai no padrão 20; teto 1000.
-const qt = z.preprocess((v) => {
-  const n = parseInt(String(v), 10);
-  if (Number.isNaN(n) || n < 1) return 20;
-  return Math.min(n, 1000);
-}, z.number().int());
-
 // Aceita true/false, "true"/"false" e 1/"1" como verdadeiro.
-const onlyWithPhone = z.preprocess(
-  (v) => v === true || v === 'true' || v === 1 || v === '1',
-  z.boolean(),
-);
+const boolParam = () =>
+  z.preprocess((v) => v === true || v === 'true' || v === 1 || v === '1', z.boolean());
+
+// query: o ramo + a localização, que viram a busca do Google Maps.
+const querySchema = z.object({
+  type: z.string().trim().min(1), // ex.: software, restaurante, mecânica
+  city: z.string().trim().optional().default(''),
+  state: z.string().trim().optional().default(''),
+});
+
+// webhook: destino + política de entrega por requisição.
+const webhookSchema = z.object({
+  url: z.string().trim().url(),
+  retry: boolParam().default(true), // false => sem retentativas
+  timeout: z.coerce.number().int().min(1000).max(120000).optional(), // ms
+});
+
+const optionsSchema = z
+  .object({
+    onlyWithPhone: boolParam().default(false), // só empresas com telefone
+    onlyRepeat: boolParam().default(true), // false => sem telefones repetidos (dedupe)
+    onlyInfosExtras: boolParam().default(false), // visita o site do lead p/ email/redes
+  })
+  .default({ onlyWithPhone: false, onlyRepeat: true, onlyInfosExtras: false });
 
 export const findSchema = z.object({
-  query: z.string().trim().min(1),
-  webhook: z.string().trim().url(),
-  qt: qt.default(20),
-  onlyWithPhone: onlyWithPhone.default(false),
-  // Mantidos por compatibilidade — aceitos, porém não usados.
-  time: z.unknown().optional(),
-  hook: z.unknown().optional(),
+  query: querySchema,
+  webhook: webhookSchema,
+  options: optionsSchema,
 });
 
 export type FindInput = z.infer<typeof findSchema>;

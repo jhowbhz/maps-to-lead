@@ -53,6 +53,11 @@ const schema = z.object({
   WEBHOOK_TIMEOUT_MS: intFromEnv(15000, 1000, 120000),
   WEBHOOK_RETRIES: intFromEnv(2, 0, 10),
 
+  // Enriquecimento (por requisição, via options.onlyInfosExtras): visita o site
+  // do lead para achar email/instagram/facebook, num POOL paralelo próprio.
+  ENRICH_TIMEOUT_MS: intFromEnv(5000, 1000, 60000),
+  ENRICH_CONCURRENCY: intFromEnv(4, 1, 16),
+
   LOG_LEVEL: z.string().optional(),
 });
 

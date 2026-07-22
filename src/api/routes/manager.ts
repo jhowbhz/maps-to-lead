@@ -1,5 +1,6 @@
+import fs from 'node:fs';
 import path from 'node:path';
-import { Router } from 'express';
+import express, { Router } from 'express';
 import ExcelJS from 'exceljs';
 import { config } from '../../config/env';
 import { logger } from '../../config/logger';
@@ -30,9 +31,24 @@ function clampInt(raw: unknown, def: number, min: number, max: number): number {
 export function managerRouter({ store, repo }: ManagerDeps): Router {
   const router = Router();
 
-  // Página do painel (o HTML não tem segredo; quem gateia os dados é o token).
+  // SPA React buildado pelo Vite (public/manager/). O index é servido em
+  // /manager; os assets (JS/CSS) por express.static no fim deste router.
+  const spaDir = path.join(config.paths.public, 'manager');
+  const spaIndex = path.join(spaDir, 'index.html');
+
   router.get('/manager', (_req, res) => {
-    res.sendFile(path.join(config.paths.public, 'manager.html'));
+    if (fs.existsSync(spaIndex)) {
+      res.sendFile(spaIndex);
+      return;
+    }
+    res
+      .status(200)
+      .type('html')
+      .send(
+        '<h1>Painel não compilado</h1><p>Rode <code>npm run build:web</code> para gerar o painel, ' +
+          'ou use o Vite dev server (<code>npm run dev</code>) em ' +
+          '<a href="http://localhost:5173/manager/">http://localhost:5173/manager/</a>.</p>',
+      );
   });
 
   // Carga inicial / fallback por polling: snapshot completo em JSON.
@@ -141,6 +157,10 @@ export function managerRouter({ store, repo }: ManagerDeps): Router {
       store.removeListener('update', onUpdate);
     });
   });
+
+  // Assets estáticos do SPA (JS/CSS gerados pelo Vite). Registrado por último
+  // para não sombrear as rotas de API/SSE acima.
+  router.use('/manager', express.static(spaDir));
 
   return router;
 }

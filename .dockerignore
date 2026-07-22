@@ -1,0 +1,26 @@
+# Dependências e artefatos (reinstalados/rebuildados dentro da imagem)
+node_modules
+**/node_modules
+dist
+public/manager
+
+# Dados locais e segredos
+data
+*.db
+*.sqlite
+*.sqlite3
+.env
+*.log
+
+# Git / metadados / editor
+.git
+.gitignore
+.github
+.vscode
+.idea
+
+# Docs e mídia que não vão pra imagem
+README.md
+doc
+screenshot.gif
+*.md
