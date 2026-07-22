@@ -19,6 +19,7 @@ function LeadRow({ l }: { l: LeadRecord }) {
       </td>
       <td className="mono">{l.phone ? l.phone : <span className="no">sem telefone</span>}</td>
       <td>{l.whatsapp ? <span className="wa">● WhatsApp</span> : <span className="no">—</span>}</td>
+      <td className="mono">{l.email ? l.email : <span className="no">—</span>}</td>
       <td>
         {l.website ? (
           <a href={l.website} target="_blank" rel="noopener noreferrer">
@@ -54,7 +55,7 @@ export function LeadsTable({ token, refreshSignal }: { token: string; refreshSig
         <table>
           <thead>
             <tr>
-              <th>Score</th><th>Nome</th><th>Telefone</th><th>WhatsApp</th><th>Site</th><th>Nota</th><th>Latência</th><th>Quando</th>
+              <th>Score</th><th>Nome</th><th>Telefone</th><th>WhatsApp</th><th>Email</th><th>Site</th><th>Nota</th><th>Latência</th><th>Quando</th>
             </tr>
           </thead>
           <tbody>
@@ -62,7 +63,7 @@ export function LeadsTable({ token, refreshSignal }: { token: string; refreshSig
               leads.map((l, i) => <LeadRow key={`${l.jobId}-${l.at}-${i}`} l={l} />)
             ) : (
               <tr>
-                <td colSpan={8} className="empty">
+                <td colSpan={9} className="empty">
                   Nenhum lead ainda. Dispare um POST em /api/find.
                 </td>
               </tr>

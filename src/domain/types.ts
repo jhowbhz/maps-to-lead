@@ -132,18 +132,39 @@ export interface JobScore {
   tiers: Record<Tier, number>;
 }
 
-/** Lead resumido guardado no feed ao vivo e persistido no SQLite. */
+/** Lead guardado no feed ao vivo e persistido no SQLite (dados completos). */
 export interface LeadRecord {
   jobId: string;
   name: string;
+  // contatos
   phone: string;
   whatsapp: string;
-  website: string;
-  rating: string;
-  reviews: string;
+  ddd: string;
+  email: string;
+  // social
+  instagram: string;
+  facebook: string;
+  website: string; // = social.site
+  // endereço
+  street: string;
+  number: string;
+  neighborhood: string;
+  city: string;
+  uf: string;
+  cep: string;
+  address: string; // = full
+  // nota
+  rating: string; // = note
+  reviews: string; // = quantity (string p/ o painel)
+  // score
   score: number;
   tier: Tier;
   breakdown: ScoreBreakdown;
+  // enriquecimento
+  siteVisitado: boolean;
+  camposEncontrados: string[];
+  // meta
+  pic: string;
   ms: number | null;
   at: number;
 }

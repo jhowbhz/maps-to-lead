@@ -34,6 +34,7 @@ export interface LeadRecord {
   name: string;
   phone: string;
   whatsapp: string;
+  email: string;
   website: string;
   rating: string;
   reviews: string;

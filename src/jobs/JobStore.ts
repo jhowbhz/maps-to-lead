@@ -157,17 +157,32 @@ export class JobStore extends EventEmitter {
     job.score.avg = Math.round(job.score.sum / job.score.count);
     job.score.tiers[s.tier] += 1;
 
+    const a = src.address;
     const lead: LeadRecord = {
       jobId: job.id,
       name: src.name || '',
       phone: phone || '',
       whatsapp: whatsapp || '',
+      ddd: src.contacts.ddd || '',
+      email: src.contacts.email || '',
+      instagram: src.social.instagram || '',
+      facebook: src.social.facebook || '',
       website: site || '',
-      rating: place?.rating || '',
-      reviews: place?.reviews || '',
+      street: a.street || '',
+      number: a.number || '',
+      neighborhood: a.neighborhood || '',
+      city: a.city || '',
+      uf: a.uf || '',
+      cep: a.cep || '',
+      address: a.full || '',
+      rating: src.rating.note || place?.rating || '',
+      reviews: String(src.rating.quantity ?? (place?.reviews || '')),
       score: s.score,
       tier: s.tier,
       breakdown: s.breakdown,
+      siteVisitado: src.extra.site_visitado,
+      camposEncontrados: src.extra.campos_encontrados,
+      pic: src.pic || '',
       ms: typeof ms === 'number' ? ms : null,
       at: Date.now(),
     };

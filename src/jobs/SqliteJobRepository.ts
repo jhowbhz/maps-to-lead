@@ -27,15 +27,48 @@ interface LeadRow {
   name: string;
   phone: string;
   whatsapp: string;
+  ddd: string;
+  email: string;
+  instagram: string;
+  facebook: string;
   website: string;
+  street: string;
+  number: string;
+  neighborhood: string;
+  city: string;
+  uf: string;
+  cep: string;
+  address: string;
   rating: string;
   reviews: string;
   score: number;
   tier: string;
   breakdown: string;
+  site_visitado: number;
+  campos_encontrados: string;
+  pic: string;
   ms: number | null;
   created_at: number;
 }
+
+// Colunas de `leads` adicionadas depois do schema original — usadas na migração
+// de bancos já existentes (ALTER TABLE idempotente).
+const LEAD_MIGRATIONS: Record<string, string> = {
+  ddd: "TEXT NOT NULL DEFAULT ''",
+  email: "TEXT NOT NULL DEFAULT ''",
+  instagram: "TEXT NOT NULL DEFAULT ''",
+  facebook: "TEXT NOT NULL DEFAULT ''",
+  street: "TEXT NOT NULL DEFAULT ''",
+  number: "TEXT NOT NULL DEFAULT ''",
+  neighborhood: "TEXT NOT NULL DEFAULT ''",
+  city: "TEXT NOT NULL DEFAULT ''",
+  uf: "TEXT NOT NULL DEFAULT ''",
+  cep: "TEXT NOT NULL DEFAULT ''",
+  address: "TEXT NOT NULL DEFAULT ''",
+  site_visitado: 'INTEGER NOT NULL DEFAULT 0',
+  campos_encontrados: "TEXT NOT NULL DEFAULT '[]'",
+  pic: "TEXT NOT NULL DEFAULT ''",
+};
 
 export class SqliteJobRepository implements JobRepository {
   private readonly db: Database.Database;
@@ -54,6 +87,7 @@ export class SqliteJobRepository implements JobRepository {
     this.db.pragma('journal_mode = WAL');
     this.db.pragma('foreign_keys = ON');
     this.db.exec(SCHEMA);
+    this.migrateLeads(); // adiciona colunas novas em bancos antigos
 
     this.upsertJobStmt = this.db.prepare(`
       INSERT INTO jobs (id, query, requested, only_with_phone, status, created_at,
@@ -75,15 +109,17 @@ export class SqliteJobRepository implements JobRepository {
     `);
 
     this.insertLeadStmt = this.db.prepare(`
-      INSERT INTO leads (job_id, name, phone, whatsapp, website, rating, reviews,
-                         score, tier, breakdown, ms, created_at)
-      VALUES (@job_id, @name, @phone, @whatsapp, @website, @rating, @reviews,
-              @score, @tier, @breakdown, @ms, @created_at)
+      INSERT INTO leads (job_id, name, phone, whatsapp, ddd, email, instagram, facebook, website,
+                         street, number, neighborhood, city, uf, cep, address,
+                         rating, reviews, score, tier, breakdown, site_visitado,
+                         campos_encontrados, pic, ms, created_at)
+      VALUES (@job_id, @name, @phone, @whatsapp, @ddd, @email, @instagram, @facebook, @website,
+              @street, @number, @neighborhood, @city, @uf, @cep, @address,
+              @rating, @reviews, @score, @tier, @breakdown, @site_visitado,
+              @campos_encontrados, @pic, @ms, @created_at)
     `);
 
-    this.recentJobsStmt = this.db.prepare(
-      `SELECT * FROM jobs ORDER BY created_at DESC LIMIT ?`,
-    );
+    this.recentJobsStmt = this.db.prepare(`SELECT * FROM jobs ORDER BY created_at DESC LIMIT ?`);
     this.leadsByJobStmt = this.db.prepare(
       `SELECT * FROM leads WHERE job_id = ? ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?`,
     );
@@ -118,12 +154,26 @@ export class SqliteJobRepository implements JobRepository {
       name: lead.name,
       phone: lead.phone,
       whatsapp: lead.whatsapp,
+      ddd: lead.ddd,
+      email: lead.email,
+      instagram: lead.instagram,
+      facebook: lead.facebook,
       website: lead.website,
+      street: lead.street,
+      number: lead.number,
+      neighborhood: lead.neighborhood,
+      city: lead.city,
+      uf: lead.uf,
+      cep: lead.cep,
+      address: lead.address,
       rating: lead.rating,
       reviews: lead.reviews,
       score: lead.score,
       tier: lead.tier,
       breakdown: JSON.stringify(lead.breakdown),
+      site_visitado: lead.siteVisitado ? 1 : 0,
+      campos_encontrados: JSON.stringify(lead.camposEncontrados),
+      pic: lead.pic,
       ms: lead.ms,
       created_at: lead.at,
     });
@@ -132,9 +182,7 @@ export class SqliteJobRepository implements JobRepository {
   recentJobs(limit: number, leadsPerJob: number): Job[] {
     const rows = this.recentJobsStmt.all(limit) as JobRow[];
     // Devolve em ordem cronológica (mais antigo primeiro), como o Store mantém.
-    return rows
-      .map((row) => this.rowToJob(row, leadsPerJob))
-      .reverse();
+    return rows.map((row) => this.rowToJob(row, leadsPerJob)).reverse();
   }
 
   leadsForJob(jobId: string, limit: number, offset: number): LeadRecord[] {
@@ -157,6 +205,15 @@ export class SqliteJobRepository implements JobRepository {
   }
 
   // --- privados -------------------------------------------------------------
+
+  private migrateLeads(): void {
+    const existing = new Set(
+      (this.db.prepare('PRAGMA table_info(leads)').all() as Array<{ name: string }>).map((r) => r.name),
+    );
+    for (const [column, ddl] of Object.entries(LEAD_MIGRATIONS)) {
+      if (!existing.has(column)) this.db.exec(`ALTER TABLE leads ADD COLUMN ${column} ${ddl}`);
+    }
+  }
 
   private rowToJob(row: JobRow, leadsPerJob: number): Job {
     // Últimos N leads em ordem cronológica (o Store guarda mais recente no fim).
@@ -186,12 +243,26 @@ export class SqliteJobRepository implements JobRepository {
       name: r.name,
       phone: r.phone,
       whatsapp: r.whatsapp,
+      ddd: r.ddd,
+      email: r.email,
+      instagram: r.instagram,
+      facebook: r.facebook,
       website: r.website,
+      street: r.street,
+      number: r.number,
+      neighborhood: r.neighborhood,
+      city: r.city,
+      uf: r.uf,
+      cep: r.cep,
+      address: r.address,
       rating: r.rating,
       reviews: r.reviews,
       score: r.score,
       tier: r.tier as LeadRecord['tier'],
       breakdown: JSON.parse(r.breakdown) as LeadRecord['breakdown'],
+      siteVisitado: r.site_visitado === 1,
+      camposEncontrados: JSON.parse(r.campos_encontrados) as string[],
+      pic: r.pic,
       ms: r.ms,
       at: r.created_at,
     };
