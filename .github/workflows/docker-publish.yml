@@ -1,0 +1,79 @@
+name: Publicar imagem Docker (GHCR)
+
+# Builda e publica a imagem em ghcr.io/jhowbhz/maps-to-lead:
+#   - push na branch main  -> tag `edge` + `sha-xxxxxxx`
+#   - push de tag `vX.Y.Z`  -> tags `X.Y.Z`, `X.Y`, `X` e `latest` (release estável)
+#   - execução manual        -> pela aba Actions (workflow_dispatch)
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+# Evita builds simultâneos redundantes para o mesmo ref (o mais novo cancela o anterior).
+concurrency:
+  group: docker-publish-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+  # github.repository já vem em minúsculas (jhowbhz/maps-to-lead), como o GHCR exige.
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write # necessário para dar push no GHCR com o GITHUB_TOKEN
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      # QEMU habilita a emulação para buildar a arquitetura arm64 no runner amd64.
+      - name: Configurar QEMU (multi-arch)
+        uses: docker/setup-qemu-action@v3
+
+      - name: Configurar Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Login no GHCR usando o token automático do próprio workflow — sem secret extra.
+      - name: Login no GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Gera automaticamente tags e labels OCI (inclui image.source, que faz o GHCR
+      # vincular o pacote a este repositório e herdar README/visibilidade).
+      - name: Extrair metadados (tags e labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=edge,enable={{is_default_branch}}
+            type=sha,format=short
+          flavor: |
+            latest=auto
+
+      - name: Build e push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          # Não publica em Pull Requests (só valida o build); publica no resto.
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # Cache entre execuções via GitHub Actions cache (acelera rebuilds).
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: false

@@ -36,6 +36,13 @@ RUN npm run build
 # ---------------------------------------------------------------------------
 FROM node:22-bookworm-slim AS runtime
 WORKDIR /app
+
+# Labels OCI: vinculam o pacote ao repositório no GHCR (o metadata-action do CI
+# sobrescreve/complementa isto; ficam aqui para builds locais também apontarem certo).
+LABEL org.opencontainers.image.title="maps-to-lead" \
+      org.opencontainers.image.description="API open source de prospecção de leads a partir do Google Maps (TypeScript + Playwright)." \
+      org.opencontainers.image.source="https://github.com/jhowbhz/maps-to-lead" \
+      org.opencontainers.image.licenses="MIT"
 ENV NODE_ENV=production \
     HOST=0.0.0.0 \
     DB_PATH=/app/data/leads.db \

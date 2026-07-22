@@ -4,9 +4,11 @@ API open source de prospecção de leads a partir do Google Maps: extrai nome, t
 WhatsApp, site e endereço estruturado por palavra-chave e dispara os resultados em um
 webhook. **Não apoiamos nem incentivamos a prática de SPAM** — utilize com sabedoria.
 
-O scraping roda em **duas fases**: a Fase 1 (síncrona) rola o feed, conta os lugares e
-retorna o total na resposta HTTP; a Fase 2 (assíncrona) extrai cada lugar em um pool
-paralelo e dispara os webhooks **na ordem original**.
+A resposta é **instantânea**: `POST /api/find` inicia a busca e retorna na hora com o
+`jobId`. A extração roda em segundo plano — rola o feed inteiro, extrai cada lugar num pool
+paralelo, (opcional) enriquece pelo site do lead e dispara os webhooks **na ordem original**.
+
+📖 **Documentação interativa (Swagger):** `GET /swagger` · spec OpenAPI: `GET /swagger.json`.
 
 ## Instalação
 
@@ -21,6 +23,22 @@ npx playwright install --with-deps chromium
 
 ## Rodando
 
+### Imagem pública (GHCR) — sem clonar o repositório
+
+A imagem é publicada em **`ghcr.io/jhowbhz/maps-to-lead`**. Basta puxar e rodar:
+
+```bash
+docker run -d --name maps-to-lead -p 9000:9000 \
+  -e MANAGER_TOKEN=seu-token \
+  -v maps-to-lead-data:/app/data \
+  --init --shm-size=1g \
+  ghcr.io/jhowbhz/maps-to-lead:latest
+```
+
+Tags disponíveis: `latest` (último release estável), `X.Y.Z` (versão fixa) e `edge` (topo da `main`).
+
+### Com docker compose (a partir do fonte)
+
 ```bash
 cp .env_example .env          # defina MANAGER_TOKEN
 docker compose up -d --build
@@ -29,7 +47,7 @@ docker compose up -d --build
 - Painel: `http://localhost:9000/manager`
 - Os dados (SQLite) persistem no volume `leads-data` — sobrevivem a `down`/`up`.
 
-Sem compose:
+Build local sem compose:
 
 ```bash
 docker build -t maps-to-lead .
