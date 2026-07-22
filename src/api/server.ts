@@ -4,6 +4,7 @@ import { logger } from '../config/logger';
 import type { JobRepository } from '../jobs/JobRepository';
 import type { JobStore } from '../jobs/JobStore';
 import type { GoogleMapsScraper } from '../scraper/GoogleMapsScraper';
+import { docsRouter } from './routes/docs';
 import { findRouter } from './routes/find';
 import { managerRouter } from './routes/manager';
 
@@ -38,14 +39,17 @@ export function createServer({ store, scraper, repo }: ServerDeps): Express {
     next();
   });
 
-  // Painel registrado ANTES da fila: o SSE mantém a conexão aberta e, se
+  // Docs e painel registrados ANTES da fila: o SSE mantém a conexão aberta e, se
   // passasse pela fila (activeLimit), ocuparia um slot pra sempre.
+  app.use(docsRouter());
   app.use(managerRouter({ store, repo }));
 
   app.get('/', (_req, res) => {
     res.setHeader('Content-Type', 'text/html');
     res.setHeader('Cache-Control', 's-max-age=1, stale-while-revalidate');
-    res.end('Nice! Go to <a href="/api/find">/api/find</a> — painel: <a href="/manager">/manager</a>');
+    res.end(
+      'Maps to Lead — docs: <a href="/swagger">/swagger</a> · painel: <a href="/manager">/manager</a>',
+    );
   });
 
   // A partir daqui, tudo passa pela fila (scraping pesado).
