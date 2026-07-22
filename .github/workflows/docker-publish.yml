@@ -10,6 +10,13 @@ on:
       - main
     tags:
       - "v*.*.*"
+  # Rebuild semanal (segunda, 06:00 UTC) mesmo sem novos commits: a base
+  # node:22-bookworm-slim recebe patches de segurança do Debian com o tempo, e
+  # rebuildar periodicamente republica a imagem com esses patches. Roda sobre a
+  # main, então republica a tag `edge` + `sha-xxxxxxx` (o `latest` continua
+  # saindo só de releases `vX.Y.Z`).
+  schedule:
+    - cron: "0 6 * * 1"
   workflow_dispatch:
 
 # Evita builds simultâneos redundantes para o mesmo ref (o mais novo cancela o anterior).

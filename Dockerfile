@@ -53,11 +53,25 @@ COPY --from=deps /app/node_modules ./node_modules
 
 # Chromium + dependências de sistema, casando com a versão do playwright
 # instalada nos node_modules. Deixa o browser legível pelo usuário não-root.
+#
+# - apt-get upgrade: puxa point-releases de segurança da base bookworm.
+# - npx playwright install: baixa o Chromium (usa npm/npx, por isso roda antes
+#   da remoção). O browser vai para /ms-playwright, não para node_modules.
+# - Remoção do npm/npx: o runtime só executa `node dist/index.js` e não precisa
+#   de npm. Os pacotes embutidos no npm (tar, sigstore, brace-expansion,
+#   picomatch, ip-address...) carregam CVEs próprios; removê-los zera esse grupo
+#   inteiro do scan e reduz o tamanho/superfície da imagem.
 RUN apt-get update \
+    && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends ca-certificates fonts-liberation \
     && npx playwright install --with-deps chromium \
     && chmod -R a+rx /ms-playwright \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /usr/local/lib/node_modules/npm \
+              /usr/local/lib/node_modules/corepack \
+              /usr/local/bin/npm \
+              /usr/local/bin/npx \
+              /usr/local/bin/corepack \
+    && rm -rf /var/lib/apt/lists/* /root/.npm /tmp/*
 
 # Artefatos buildados.
 COPY --from=builder /app/dist ./dist
