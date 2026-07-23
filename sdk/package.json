@@ -1,0 +1,62 @@
+{
+  "name": "@jhowbhz/maps-to-lead",
+  "version": "0.0.1",
+  "description": "SDK cliente (TypeScript) para a API Maps to Lead — prospecção de leads a partir do Google Maps. De maneira nenhuma apoiamos ou incentivamos a prática de SPAM.",
+  "keywords": [
+    "google-maps",
+    "leads",
+    "lead-generation",
+    "prospeccao",
+    "scraping",
+    "webhook",
+    "sdk",
+    "api-client",
+    "maps-to-lead",
+    "apibrasil"
+  ],
+  "author": "Jonathan Henrique",
+  "license": "MIT",
+  "homepage": "https://github.com/jhowbhz/maps-to-lead/tree/main/sdk#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jhowbhz/maps-to-lead.git",
+    "directory": "sdk"
+  },
+  "bugs": {
+    "url": "https://github.com/jhowbhz/maps-to-lead/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18.18"
+  },
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2"
+  }
+}

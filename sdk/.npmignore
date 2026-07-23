@@ -1,0 +1,7 @@
+# Fonte e config — só publicamos dist/ (ver campo "files" do package.json)
+src
+examples
+tsconfig.json
+tsup.config.ts
+*.tsbuildinfo
+.DS_Store

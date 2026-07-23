@@ -4,7 +4,8 @@
   "description": "API open source de prospecção de leads a partir do Google Maps (TypeScript + Playwright). De maneira nenhuma apoiamos ou incentivamos a prática de SPAM, utilize com sabedoria.",
   "main": "dist/index.js",
   "workspaces": [
-    "web"
+    "web",
+    "sdk"
   ],
   "engines": {
     "node": ">=18.18"
@@ -15,6 +16,8 @@
     "dev:web": "npm --workspace web run dev",
     "build": "npm run build:web && tsc",
     "build:web": "npm --workspace web run build",
+    "build:sdk": "npm --workspace sdk run build",
+    "typecheck:sdk": "npm --workspace sdk run typecheck",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
