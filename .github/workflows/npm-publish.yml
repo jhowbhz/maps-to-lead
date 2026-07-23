@@ -1,0 +1,51 @@
+name: Publicar SDK no npm
+
+# Publica @jhowbhz/maps-to-lead (pasta sdk/) no npm via Trusted Publishing (OIDC):
+#   - push de tag `sdk-vX.Y.Z` -> publica a versão do sdk/package.json
+#   - execução manual           -> pela aba Actions (workflow_dispatch)
+#
+# Não usa NPM_TOKEN: a confiança é estabelecida no npmjs.com (Settings do pacote
+# -> Trusted Publisher), apontando para este repositório e este arquivo de
+# workflow. O npm CLI troca o token OIDC do GitHub automaticamente no publish.
+on:
+  push:
+    tags:
+      - "sdk-v*.*.*"
+  workflow_dispatch:
+
+concurrency:
+  group: npm-publish-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # necessário para o OIDC do Trusted Publishing do npm
+    defaults:
+      run:
+        working-directory: sdk
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: "https://registry.npmjs.org"
+
+      # Trusted Publishing exige npm >= 11.5.1 (o Node 22 traz npm 10.x).
+      - name: Atualizar npm
+        run: npm install -g npm@latest
+
+      - name: Instalar dependências
+        run: npm install
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      # O build roda automaticamente via prepublishOnly (tsup).
+      - name: Publicar no npm
+        run: npm publish

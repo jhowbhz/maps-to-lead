@@ -1,0 +1,50 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "maps-to-lead"
+version = "0.0.1"
+description = "SDK cliente (Python) para a API Maps to Lead — prospecção de leads a partir do Google Maps. De maneira nenhuma apoiamos ou incentivamos a prática de SPAM."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [{ name = "Jonathan Henrique" }]
+keywords = [
+    "google-maps",
+    "leads",
+    "lead-generation",
+    "prospeccao",
+    "scraping",
+    "webhook",
+    "sdk",
+    "api-client",
+    "maps-to-lead",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/jhowbhz/maps-to-lead"
+Repository = "https://github.com/jhowbhz/maps-to-lead"
+Issues = "https://github.com/jhowbhz/maps-to-lead/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/maps_to_lead"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src", "README.md", "LICENSE"]

@@ -1,0 +1,14 @@
+# Build / distribuição
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Cache / venv
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
