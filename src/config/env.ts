@@ -30,6 +30,11 @@ const schema = z.object({
   // Painel de monitoramento (/manager). Vazio = painel desabilitado (503).
   MANAGER_TOKEN: z.string().default(''),
 
+  // Rate limiting HTTP (contém flood/DoS nas rotas que tocam disco/banco).
+  // RATE_LIMIT_MAX requisições por IP a cada RATE_LIMIT_WINDOW_MS.
+  RATE_LIMIT_WINDOW_MS: intFromEnv(60_000, 1000, 3_600_000),
+  RATE_LIMIT_MAX: intFromEnv(600, 1, 1_000_000),
+
   // Seletores do Google Maps. Padrões baseados em atributos estáveis
   // (href/aria/role); só sobrescreva se o Google mudar algo estrutural.
   LISTING: z.string().default('a[href^="https://www.google.com/maps/place/"]'),

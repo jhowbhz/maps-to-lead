@@ -4,6 +4,7 @@ import { logger } from '../config/logger';
 import type { JobRepository } from '../jobs/JobRepository';
 import type { JobStore } from '../jobs/JobStore';
 import type { GoogleMapsScraper } from '../scraper/GoogleMapsScraper';
+import { apiRateLimiter } from './middleware/rateLimit';
 import { docsRouter } from './routes/docs';
 import { findRouter } from './routes/find';
 import { managerRouter } from './routes/manager';
@@ -38,6 +39,10 @@ export function createServer({ store, scraper, repo }: ServerDeps): Express {
     );
     next();
   });
+
+  // Rate limiting depois do CORS (pra respostas 429 também carregarem os headers
+  // de CORS) e antes das rotas, cobrindo painel, docs e busca.
+  app.use(apiRateLimiter);
 
   // Docs e painel registrados ANTES da fila: o SSE mantém a conexão aberta e, se
   // passasse pela fila (activeLimit), ocuparia um slot pra sempre.
