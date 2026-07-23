@@ -8,24 +8,7 @@ A resposta é **instantânea**: `POST /api/find` inicia a busca e retorna na hor
 `jobId`. A extração roda em segundo plano — rola o feed inteiro, extrai cada lugar num pool
 paralelo, (opcional) enriquece pelo site do lead e dispara os webhooks **na ordem original**.
 
-📖 **Documentação interativa (Swagger):** `GET /swagger` · spec OpenAPI: `GET /swagger.json`.
-
-## Instalação
-
-```bash
-git clone https://github.com/jhowbhz/maps-to-lead.git maps-to-leads
-cd maps-to-leads
-cp .env_example .env          # edite o MANAGER_TOKEN
-npm install                   # instala deps e o Chromium do Playwright (postinstall)
-# No Linux, para instalar libs do sistema do Chromium:
-npx playwright install --with-deps chromium
-```
-
 ## Rodando
-
-### Imagem pública (GHCR) — sem clonar o repositório
-
-A imagem é publicada em **`ghcr.io/jhowbhz/maps-to-lead`**. Basta puxar e rodar:
 
 ```bash
 docker run -d --name maps-to-lead -p 9000:9000 \
@@ -35,8 +18,6 @@ docker run -d --name maps-to-lead -p 9000:9000 \
   ghcr.io/jhowbhz/maps-to-lead:latest
 ```
 
-Tags disponíveis: `latest` (último release estável), `X.Y.Z` (versão fixa) e `edge` (topo da `main`).
-
 ### Com docker compose (a partir do fonte)
 
 ```bash
@@ -45,18 +26,6 @@ docker compose up -d --build
 ```
 
 - Painel: `http://localhost:9000/manager`
-- Os dados (SQLite) persistem no volume `leads-data` — sobrevivem a `down`/`up`.
-
-Build local sem compose:
-
-```bash
-docker build -t maps-to-lead .
-docker run -d --name maps-to-lead -p 9000:9000 \
-  -e MANAGER_TOKEN=seu-token \
-  -v maps-to-lead-data:/app/data \
-  --init --shm-size=1g \
-  maps-to-lead
-```
 
 ## API
 
@@ -142,29 +111,6 @@ curl --location --request POST 'http://127.0.0.1:9000/api/find' \
   }
 }
 ```
-
-- `ddd` é derivado do telefone; números **não geográficos** (0800/0300…) ficam com `ddd: ""`.
-  Se o **link do Maps** já for um Instagram/Facebook, é roteado automaticamente para `social.*`.
-- `extra` só é preenchido com `options.onlyInfosExtras: true` — o site do lead é visitado num
-  **pool paralelo**; se a home não tiver email, ele segue as páginas de **contato**.
-  `campos_encontrados` lista o que achou (email/instagram/facebook).
-
-## Painel de monitoramento — `/manager`
-
-SPA **React** ao vivo (SSE) com KPIs, abas **Processos** e **Leads** (ambas em tabela,
-paginadas de 12 em 12), progresso, % com telefone/WhatsApp, score dos leads (0–100,
-tiers A/B/C/D), latência e **download dos leads em `.xlsx`**. Login por **token**
-(`MANAGER_TOKEN` no `.env`).
-
-- `GET /manager` — painel (SPA React)
-- `GET /manager/api/state` — snapshot JSON (token)
-- `GET /manager/stream` — stream SSE ao vivo (token)
-- `GET /manager/api/leads` — leads persistidos, paginado (token)
-- `GET /manager/api/leads.xlsx` — exporta os leads em planilha (token)
-- `GET /manager/api/jobs` — histórico de jobs persistidos (token)
-- `GET /manager/api/jobs/:id/leads` — leads de um job, paginado (token)
-
-Acesse `http://SEU_HOST:9000/manager` e informe o token (ou use `?token=...`).
 
 ## Screen
 <img width="1055" height="737" alt="image" src="https://github.com/user-attachments/assets/b16d90b3-d573-4ccf-b3ef-87bf2a7305ee" />

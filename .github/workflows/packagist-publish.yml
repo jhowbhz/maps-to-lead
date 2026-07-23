@@ -1,0 +1,58 @@
+name: Publicar SDK no Packagist (split PHP)
+
+# O Packagist lê o composer.json da RAIZ do repositório, mas o nosso SDK PHP
+# vive em sdk-php/. Este workflow faz o "subtree split": espelha sdk-php/ para o
+# repositório dedicado jhowbhz/maps-to-lead-php (na raiz dele), de onde o
+# Packagist publica. Uma tag `php-vX.Y.Z` aqui vira a versão `vX.Y.Z` no espelho.
+#
+# Pré-requisitos (configurar uma vez):
+#   1. Crie o repositório VAZIO github.com/jhowbhz/maps-to-lead-php
+#   2. Gere um token do GitHub com permissão de escrita nesse repo espelho
+#      (classic com escopo `repo`, ou fine-grained com Contents: Read and write)
+#      e salve como secret `PHP_SPLIT_TOKEN` NESTE repositório
+#      (Settings -> Secrets and variables -> Actions -> New repository secret).
+#   3. Em packagist.org, submeta github.com/jhowbhz/maps-to-lead-php e instale o
+#      GitHub App do Packagist nele — assim cada tag vira uma versão sozinha.
+#
+# Publicar uma versão:
+#   git tag php-v0.0.1 && git push origin php-v0.0.1
+on:
+  push:
+    tags:
+      - "php-v*.*.*"
+  workflow_dispatch:
+
+concurrency:
+  group: packagist-publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  split:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (histórico completo — necessário para o split)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Calcular a tag limpa (remove o prefixo `php-`)
+        id: version
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            echo "tag=${GITHUB_REF_NAME#php-}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Split de sdk-php/ -> jhowbhz/maps-to-lead-php
+        uses: symplify/monorepo-split-github-action@v2.3.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.PHP_SPLIT_TOKEN }}
+        with:
+          tag: ${{ steps.version.outputs.tag }}
+          branch: main
+          package_directory: sdk-php
+          repository_organization: jhowbhz
+          repository_name: maps-to-lead-php
+          user_name: jhowbhz
+          user_email: contato@apibrasil.com.br
